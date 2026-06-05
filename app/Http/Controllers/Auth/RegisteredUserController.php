@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use App\Models\Organization;
 
 class RegisteredUserController extends Controller
 {
@@ -28,24 +29,47 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+   public function store(Request $request): RedirectResponse
+{
+$request->validate([
+'organization_name' => ['required', 'string', 'max:255'],
+'industry' => ['required', 'string', 'max:255'],
+'first_name' => ['required', 'string', 'max:255'],
+'last_name' => ['required', 'string', 'max:255'],
+'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+'password' => ['required', 'confirmed', Rules\Password::defaults()],
+]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
 
-        event(new Registered($user));
+// Create Organization
+$organization = Organization::create([
+    'organization_name' => $request->organization_name,
+    'industry' => $request->industry,
+    'email' => $request->email,
+    'subscription_plan' => 'Free',
+    'status' => true,
+]);
 
-        Auth::login($user);
+// Create User
+$user = User::create([
+    'first_name' => $request->first_name,
+    'last_name' => $request->last_name,
+    'name' => $request->first_name . ' ' . $request->last_name,
+    'email' => $request->email,
+    'password' => Hash::make($request->password),
+    'organization_id' => $organization->id,
+    'status' => true,
+]);
 
-        return redirect(route('dashboard', absolute: false));
-    }
+// Assign Role
+$user->assignRole('Organization Admin');
+
+event(new Registered($user));
+
+Auth::login($user);
+
+return redirect(route('dashboard', absolute: false));
+
+
+}
 }
