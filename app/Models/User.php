@@ -33,6 +33,11 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Organization::class);
     }
+    
+    public function department()
+{
+    return $this->belongsTo(Department::class);
+}
 
     protected function casts(): array
     {
