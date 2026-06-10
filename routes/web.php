@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\UserManagementController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -23,6 +24,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth'])->group(function () {
 
     Route::resource('departments', DepartmentController::class);
+    Route::resource('users', UserManagementController::class);
 
 });
 

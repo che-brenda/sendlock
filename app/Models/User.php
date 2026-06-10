@@ -12,13 +12,14 @@ use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable([
 'first_name',
-'last_name',
-'name',
-'email',
-'password',
-'organization_id',
-'status',
-'last_login'
+    'last_name',
+    'name',
+    'email',
+    'password',
+    'organization_id',
+    'department_id',
+    'status',
+    'last_login'
 ])]
 #[Hidden([
     'password',

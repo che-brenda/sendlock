@@ -9,7 +9,12 @@ class DepartmentController extends Controller
 {
     public function index()
     {
-        $departments = Department::latest()->get();
+        $departments = Department::where(
+    'organization_id',
+    auth()->user()->organization_id
+)
+->latest()
+->get();
 
         return view('departments.index', compact('departments'));
     }
