@@ -5,6 +5,21 @@
 
         <div class="flex justify-between items-center mb-6">
 
+
+            @if($errors->any())
+<div style="
+    background:#fee2e2;
+    color:#991b1b;
+    padding:10px;
+    border-radius:6px;
+    margin-bottom:20px;
+">
+
+    {{ $errors->first() }}
+
+</div>
+@endif
+
         @if(session('success'))
     <div
         style="
@@ -94,7 +109,7 @@
 
                             <div style="display:flex; gap:10px;">
 
-                                <a href="#"
+                                <a href="{{ route('users.show', $user->id) }}"
                                    style="
                                         background:#2563eb;
                                         color:white;
@@ -107,7 +122,7 @@
                                     View
                                 </a>
 
-                                <a href="#"
+                                <a href="{{ route('users.edit', $user->id) }}"
                                    style="
                                         background:#f59e0b;
                                         color:white;
@@ -119,6 +134,80 @@
                                    ">
                                     Edit
                                 </a>
+
+                                <form action="{{ route('users.destroy', $user->id) }}"
+      method="POST">
+
+    @csrf
+    @method('DELETE')
+
+    <button
+        type="submit"
+        onclick="return confirm('Delete this user?')"
+        style="
+            background:#dc2626;
+            color:white;
+            width:80px;
+            padding:8px;
+            border-radius:4px;
+            border:none;
+            cursor:pointer;
+        ">
+
+        Delete
+
+    </button>
+
+    
+
+</form>
+@if($user->status)
+
+<form action="{{ route('users.deactivate', $user->id) }}"
+      method="POST">
+
+    @csrf
+
+    <button
+        type="submit"
+        style="
+            background:#f59e0b;
+            color:white;
+            width:100px;
+            padding:8px;
+            border-radius:4px;
+            border:none;
+            cursor:pointer;
+        ">
+        Deactivate
+    </button>
+
+</form>
+
+@else
+
+<form action="{{ route('users.activate', $user->id) }}"
+      method="POST">
+
+    @csrf
+
+    <button
+        type="submit"
+        style="
+            background:#16a34a;
+            color:white;
+            width:100px;
+            padding:8px;
+            border-radius:4px;
+            border:none;
+            cursor:pointer;
+        ">
+        Activate
+    </button>
+
+</form>
+
+@endif
 
                             </div>
 
