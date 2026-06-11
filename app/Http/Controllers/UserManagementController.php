@@ -8,184 +8,258 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use App\Helpers\AuditLogger;
 
 class UserManagementController extends Controller
 {
     public function index()
     {
         $users = User::with(['department'])
-    ->where(
-        'organization_id',
-        auth()->user()->organization_id
-    )
-    ->latest()
-    ->get();
+            ->where(
+                'organization_id',
+                auth()->user()->organization_id
+            )
+            ->latest()
+            ->get();
+
         return view('users.index', compact('users'));
     }
-
-    public function store(Request $request)
-{
-    $request->validate([
-        'first_name' => 'required|max:255',
-        'last_name' => 'required|max:255',
-        'email' => 'required|email|unique:users,email',
-        'department_id' => 'nullable|exists:departments,id',
-        'role' => 'required',
-        'password' => [
-            'required',
-            'confirmed',
-            Rules\Password::defaults()
-        ],
-    ]);
-
-    $user = User::create([
-        'first_name' => $request->first_name,
-        'last_name' => $request->last_name,
-        'name' => $request->first_name . ' ' . $request->last_name,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-
-        'organization_id' => auth()->user()->organization_id,
-
-        'department_id' => $request->department_id,
-
-        'status' => true,
-    ]);
-
-    $user->assignRole($request->role);
-
-    return redirect()
-        ->route('users.index')
-        ->with('success', 'User created successfully.');
-   }
-
-   public function edit(User $user)
-{
-    $user = User::where(
-        'organization_id',
-        auth()->user()->organization_id
-    )->findOrFail($user->id);
-
-    $departments = Department::where(
-        'organization_id',
-        auth()->user()->organization_id
-    )->get();
-
-    $roles = Role::where(
-        'name',
-        '!=',
-        'Super Admin'
-    )->get();
-
-    return view(
-        'users.edit',
-        compact(
-            'user',
-            'departments',
-            'roles'
-        )
-    );
-}
-
-   public function show(User $user)
-{
-    $user = User::with([
-        'department',
-        'organization'
-    ])
-    ->where(
-        'organization_id',
-        auth()->user()->organization_id
-    )
-    ->findOrFail($user->id);
-
-    return view('users.show', compact('user'));
-}
-
-
-public function activate(User $user)
-{
-    $user = User::where(
-        'organization_id',
-        auth()->user()->organization_id
-    )->findOrFail($user->id);
-
-    $user->update([
-        'status' => true
-    ]);
-
-    return back()->with(
-        'success',
-        'User activated successfully.'
-    );
-}
-
-public function deactivate(User $user)
-{
-    $user = User::where(
-        'organization_id',
-        auth()->user()->organization_id
-    )->findOrFail($user->id);
-
-    if ($user->id === auth()->id()) {
-
-        return back()->withErrors([
-            'error' =>
-            'You cannot deactivate your own account.'
-        ]);
-
-    }
-
-    $user->update([
-        'status' => false
-    ]);
-
-    return back()->with(
-        'success',
-        'User deactivated successfully.'
-    );
-}
-
-
-public function destroy(User $user)
-{
-    $user = User::where(
-        'organization_id',
-        auth()->user()->organization_id
-    )->findOrFail($user->id);
-
-    // Prevent self-delete
-    if ($user->id === auth()->id()) {
-        return back()->withErrors([
-            'error' => 'You cannot delete your own account.'
-        ]);
-    }
-
-    // Prevent deleting Super Admin
-    if ($user->hasRole('Super Admin')) {
-        return back()->withErrors([
-            'error' => 'Super Admin cannot be deleted.'
-        ]);
-    }
-
-    $user->delete();
-
-    return redirect()
-        ->route('users.index')
-        ->with('success', 'User deleted successfully.');
-}
 
     public function create()
     {
         $departments = Department::where(
-    'organization_id',
-    auth()->user()->organization_id
-)->get();
+            'organization_id',
+            auth()->user()->organization_id
+        )->get();
+
         $roles = Role::where('name', '!=', 'Super Admin')->get();
 
         return view('users.create', compact(
             'departments',
             'roles'
         ));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'first_name' => 'required|max:255',
+            'last_name' => 'required|max:255',
+            'email' => 'required|email|unique:users,email',
+            'department_id' => 'nullable|exists:departments,id',
+            'role' => 'required',
+            'password' => [
+                'required',
+                'confirmed',
+                Rules\Password::defaults()
+            ],
+        ]);
+
+        if (
+            !auth()->user()->hasRole('Super Admin')
+            && $request->role === 'Super Admin'
+        ) {
+            abort(403, 'Unauthorized role assignment.');
+        }
+
+        $user = User::create([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'name' => $request->first_name . ' ' . $request->last_name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'organization_id' => auth()->user()->organization_id,
+            'department_id' => $request->department_id,
+            'status' => true,
+        ]);
+
+        $user->assignRole($request->role);
+
+        AuditLogger::log(
+            'CREATE',
+            'USER',
+            $user->id,
+            'Created user ' . $user->email
+        );
+
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'User created successfully.');
+    }
+
+    public function show(User $user)
+    {
+        $user = User::with([
+            'department',
+            'organization'
+        ])
+        ->where(
+            'organization_id',
+            auth()->user()->organization_id
+        )
+        ->findOrFail($user->id);
+
+        return view('users.show', compact('user'));
+    }
+
+    public function edit(User $user)
+    {
+        $user = User::where(
+            'organization_id',
+            auth()->user()->organization_id
+        )->findOrFail($user->id);
+
+        $departments = Department::where(
+            'organization_id',
+            auth()->user()->organization_id
+        )->get();
+
+        $roles = Role::where(
+            'name',
+            '!=',
+            'Super Admin'
+        )->get();
+
+        return view(
+            'users.edit',
+            compact(
+                'user',
+                'departments',
+                'roles'
+            )
+        );
+    }
+
+    public function update(Request $request, User $user)
+    {
+        $user = User::where(
+            'organization_id',
+            auth()->user()->organization_id
+        )->findOrFail($user->id);
+
+        $request->validate([
+            'first_name' => 'required|max:255',
+            'last_name' => 'required|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'department_id' => 'nullable|exists:departments,id',
+        ]);
+
+        $user->update([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'name' => $request->first_name . ' ' . $request->last_name,
+            'email' => $request->email,
+            'department_id' => $request->department_id,
+        ]);
+
+        AuditLogger::log(
+            'UPDATE',
+            'USER',
+            $user->id,
+            'Updated user ' . $user->email
+        );
+
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'User updated successfully.');
+    }
+
+    public function activate(User $user)
+    {
+        $user = User::where(
+            'organization_id',
+            auth()->user()->organization_id
+        )->findOrFail($user->id);
+
+        if ($user->hasRole('Super Admin')) {
+            return back()->withErrors([
+                'error' => 'Super Admin accounts cannot be managed.'
+            ]);
+        }
+
+        $user->update([
+            'status' => true
+        ]);
+
+        AuditLogger::log(
+            'ACTIVATE',
+            'USER',
+            $user->id,
+            'Activated user ' . $user->email
+        );
+
+        return back()->with(
+            'success',
+            'User activated successfully.'
+        );
+    }
+
+    public function deactivate(User $user)
+    {
+        $user = User::where(
+            'organization_id',
+            auth()->user()->organization_id
+        )->findOrFail($user->id);
+
+        if ($user->id === auth()->id()) {
+            return back()->withErrors([
+                'error' => 'You cannot deactivate your own account.'
+            ]);
+        }
+
+        if ($user->hasRole('Super Admin')) {
+            return back()->withErrors([
+                'error' => 'Super Admin accounts cannot be managed.'
+            ]);
+        }
+
+        $user->update([
+            'status' => false
+        ]);
+
+        AuditLogger::log(
+            'DEACTIVATE',
+            'USER',
+            $user->id,
+            'Deactivated user ' . $user->email
+        );
+
+        return back()->with(
+            'success',
+            'User deactivated successfully.'
+        );
+    }
+
+    public function destroy(User $user)
+    {
+        $user = User::where(
+            'organization_id',
+            auth()->user()->organization_id
+        )->findOrFail($user->id);
+
+        if ($user->id === auth()->id()) {
+            return back()->withErrors([
+                'error' => 'You cannot delete your own account.'
+            ]);
+        }
+
+        if ($user->hasRole('Super Admin')) {
+            return back()->withErrors([
+                'error' => 'Super Admin cannot be deleted.'
+            ]);
+        }
+
+        AuditLogger::log(
+            'DELETE',
+            'USER',
+            $user->id,
+            'Deleted user ' . $user->email
+        );
+
+        $user->delete();
+
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'User deleted successfully.');
     }
 }
