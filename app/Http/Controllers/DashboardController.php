@@ -37,10 +37,12 @@ class DashboardController extends Controller
                     ->get(),
                 'aggregatesSubOrgs' => false,
                 'canDrillDown' => false,
+                'currentOrg' => null,   // platform-wide
             ]);
         }
 
         $org = $user->organization;
+        $org?->load('parent');                      // for the header breadcrumb
         $ids = $org ? $org->descendantIds() : [];   // self + sub-orgs (2 levels)
 
         // The sub-organization section is only meaningful for a head organization.
@@ -62,6 +64,7 @@ class DashboardController extends Controller
             'headOrganizations' => collect(),
             'aggregatesSubOrgs' => $subOrganizations->isNotEmpty(),
             'canDrillDown' => $user->canManageSubOrganizations(),
+            'currentOrg' => $org,
         ]);
     }
 }

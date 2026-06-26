@@ -124,6 +124,29 @@ test('a non-admin of a head org has no sub-organization powers', function () {
     $this->actingAs($employee)->get(route('sub-organizations.index'))->assertForbidden();
 });
 
+test('the dashboard header shows the org name, with the parent above a sub-org', function () {
+    // Head org user: just the org name.
+    $headUser = makeUser($this->head, 'Organization Admin');
+    $this->actingAs($headUser)->get('/dashboard')->assertOk()->assertSee('Acme Group');
+
+    // Sub-org user: parent ("Acme Group") above the sub-org name ("Acme Europe").
+    $subUser = makeUser($this->sub, 'Organization Admin');
+    $this->actingAs($subUser)->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Acme Group')    // main organization, top-left
+        ->assertSee('Acme Europe');  // sub-organization, below it
+});
+
+test('the stat cards link to their management pages for an admin', function () {
+    $admin = makeUser($this->head, 'Organization Admin');
+
+    $this->actingAs($admin)->get('/dashboard')
+        ->assertOk()
+        ->assertSee(route('users.index'))
+        ->assertSee(route('departments.index'))
+        ->assertSee(route('sub-organizations.index'));   // Organizations card → sub-orgs
+});
+
 test('super admin dashboard lists organizations and their sub-org counts', function () {
     $super = makeUser($this->head, 'Super Admin');
 

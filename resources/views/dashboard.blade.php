@@ -1,31 +1,64 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <h2 class="text-xl font-semibold text-slate-800 leading-tight">Security Dashboard</h2>
-            <p class="text-sm text-slate-400">Communication trust overview</p>
+            @if(($currentOrg ?? null))
+                @if($currentOrg->parent)
+                    {{-- Sub-organization: main organization on top, sub-org below it. --}}
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ $currentOrg->parent->organization_name }}</p>
+                    <h2 class="flex items-center gap-2 text-xl font-semibold text-slate-800 leading-tight">
+                        <svg class="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                        {{ $currentOrg->organization_name }}
+                    </h2>
+                    <p class="text-sm text-slate-400">Security Dashboard · sub-organization</p>
+                @else
+                    <h2 class="text-xl font-semibold text-slate-800 leading-tight">{{ $currentOrg->organization_name }}</h2>
+                    <p class="text-sm text-slate-400">Security Dashboard</p>
+                @endif
+            @else
+                <h2 class="text-xl font-semibold text-slate-800 leading-tight">All Organizations</h2>
+                <p class="text-sm text-slate-400">Platform security dashboard</p>
+            @endif
         </div>
     </x-slot>
 
     <div class="py-8">
         <div class="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
 
-            <!-- Stat cards -->
+            <!-- Stat cards (link to the relevant management pages where accessible) -->
             <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
                 @php
+                    $u = auth()->user();
+                    $isAdminLevel = $u->isSuperAdmin() || $u->isHeadOrgAdmin() || $u->isOrgAdmin();
+                    $orgHref = $u->isSuperAdmin()
+                        ? route('organizations.index')
+                        : ($u->canManageSubOrganizations() ? route('sub-organizations.index') : null);
+                    $usersHref = $isAdminLevel ? route('users.index') : null;
+                    $deptHref = $isAdminLevel ? route('departments.index') : null;
+
                     $cards = [
-                        ['label' => 'Organizations', 'value' => $organizations, 'accent' => 'text-slate-900', 'ring' => 'bg-slate-100 text-slate-600'],
-                        ['label' => 'Users', 'value' => $users, 'accent' => 'text-slate-900', 'ring' => 'bg-teal-100 text-teal-600'],
-                        ['label' => 'Departments', 'value' => $departments, 'accent' => 'text-slate-900', 'ring' => 'bg-indigo-100 text-indigo-600'],
-                        ['label' => 'Active Users', 'value' => $activeUsers, 'accent' => 'text-emerald-600', 'ring' => 'bg-emerald-100 text-emerald-600'],
-                        ['label' => 'Inactive Users', 'value' => $inactiveUsers, 'accent' => 'text-rose-600', 'ring' => 'bg-rose-100 text-rose-600'],
+                        ['label' => 'Organizations', 'value' => $organizations, 'accent' => 'text-slate-900', 'href' => $orgHref],
+                        ['label' => 'Users', 'value' => $users, 'accent' => 'text-slate-900', 'href' => $usersHref],
+                        ['label' => 'Departments', 'value' => $departments, 'accent' => 'text-slate-900', 'href' => $deptHref],
+                        ['label' => 'Active Users', 'value' => $activeUsers, 'accent' => 'text-emerald-600', 'href' => $usersHref],
+                        ['label' => 'Inactive Users', 'value' => $inactiveUsers, 'accent' => 'text-rose-600', 'href' => $usersHref],
                     ];
                 @endphp
 
                 @foreach($cards as $card)
-                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <p class="text-xs font-medium uppercase tracking-wide text-slate-400">{{ $card['label'] }}</p>
-                    <p class="mt-2 text-3xl font-bold {{ $card['accent'] }}">{{ $card['value'] }}</p>
-                </div>
+                    @if($card['href'])
+                    <a href="{{ $card['href'] }}" class="group block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-teal-300 hover:shadow-md">
+                        <p class="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-400">
+                            {{ $card['label'] }}
+                            <svg class="h-3.5 w-3.5 text-slate-300 transition group-hover:text-teal-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                        </p>
+                        <p class="mt-2 text-3xl font-bold {{ $card['accent'] }}">{{ $card['value'] }}</p>
+                    </a>
+                    @else
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">{{ $card['label'] }}</p>
+                        <p class="mt-2 text-3xl font-bold {{ $card['accent'] }}">{{ $card['value'] }}</p>
+                    </div>
+                    @endif
                 @endforeach
             </div>
 
