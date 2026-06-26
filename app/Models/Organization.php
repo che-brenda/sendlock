@@ -34,6 +34,11 @@ class Organization extends Model
         return $this->hasMany(Department::class);
     }
 
+    public function emailScans()
+    {
+        return $this->hasMany(EmailScan::class);
+    }
+
     /**
      * The head organization this sub-organization belongs to.
      */

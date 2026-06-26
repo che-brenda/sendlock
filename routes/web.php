@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmailScanController;
 use App\Http\Controllers\FlaggedDomainController;
@@ -14,36 +15,15 @@ use App\Http\Controllers\SubOrganizationController;
 use App\Http\Controllers\ThreatIntelController;
 use App\Http\Controllers\TrustCenterController;
 use App\Http\Controllers\UserManagementController;
-use App\Models\AuditLog;
-use App\Models\Department;
-use App\Models\Organization;
-use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    if (auth()->user()->hasRole('Super Admin')) {
-        $organizations = Organization::count();
-        $users = User::count();
-        $departments = Department::count();
-        $activeUsers = User::where('status', true)->count();
-        $inactiveUsers = User::where('status', false)->count();
-        $recentLogs = AuditLog::latest()->take(10)->get();
-    } else {
-        $organizationId = auth()->user()->organization_id;
-        $organizations = 1;
-        $users = User::where('organization_id', $organizationId)->count();
-        $departments = Department::where('organization_id', $organizationId)->count();
-        $activeUsers = User::where('organization_id', $organizationId)->where('status', true)->count();
-        $inactiveUsers = User::where('organization_id', $organizationId)->where('status', false)->count();
-        $recentLogs = AuditLog::where('organization_id', $organizationId)->latest()->take(10)->get();
-    }
-
-return view('dashboard', compact('organizations', 'users', 'departments', 'activeUsers', 'inactiveUsers', 'recentLogs'));
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

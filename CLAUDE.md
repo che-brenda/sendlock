@@ -56,7 +56,12 @@ npm run dev / npm run build  # vite assets
 `parent_id = null`) owns **sub** organizations (`type = 'sub'`). `Organization` exposes
 `parent()`, `children()`, `isHead()`, `isSub()`, and `descendantIds()` (self + children, for
 scoping a head admin across its tree). New sign-ups create a head org; `SubOrganizationController`
-(behind `headorg.admin`) lets a head admin manage its sub-orgs, scoped to its own children.
+(behind `headorg.admin`) lets a head admin manage its sub-orgs, scoped to its own children. The
+**dashboard** (`DashboardController`) aggregates totals + recent activity across `descendantIds()`,
+so a head org sees everything beneath it; it renders a **Sub-Organizations** section (each sub-org's
+user/dept/scan counts), and Head Org Admins get a **read-only drill-down** (`sub-organizations.show`)
+into a sub-org's members, scans, and activity. Super Admin's dashboard lists all head orgs with their
+sub-org counts. The hierarchy is **two levels** (head → sub); sub-orgs don't nest further.
 
 ### Worker numbers
 `users.worker_number` is the human-facing staff id, **entered manually** and validated **unique

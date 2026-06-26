@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\AuditLogger;
+use App\Models\AuditLog;
+use App\Models\EmailScan;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 
@@ -85,8 +87,14 @@ class SubOrganizationController extends Controller
         // Scope: the record must be a child of the current head organization.
         abort_unless((int) $subOrganization->parent_id === (int) $head->id, 403);
 
-        $subOrganization->loadCount('users', 'departments');
+        $subOrganization->loadCount(['users', 'departments', 'emailScans']);
 
-        return view('sub-organizations.show', compact('subOrganization', 'head'));
+        // Read-only window into the sub-organization's activity. The parent can
+        // see everything happening beneath it but cannot edit a sub-org's records.
+        $members = $subOrganization->users()->latest()->take(20)->get();
+        $recentScans = EmailScan::where('organization_id', $subOrganization->id)->latest()->take(10)->get();
+        $recentLogs = AuditLog::where('organization_id', $subOrganization->id)->latest()->take(10)->get();
+
+        return view('sub-organizations.show', compact('subOrganization', 'head', 'members', 'recentScans', 'recentLogs'));
     }
 }
