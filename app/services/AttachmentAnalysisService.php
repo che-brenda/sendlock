@@ -20,7 +20,7 @@ class AttachmentAnalysisService
     private const MAX_SCORE = 50;
 
     /**
-     * @param string[] $filenames
+     * @param  string[]  $filenames
      */
     public static function analyze(array $filenames): array
     {
@@ -40,19 +40,20 @@ class AttachmentAnalysisService
             // Double extension disguise, e.g. invoice.pdf.exe
             if (count($parts) >= 3 && in_array($ext, array_merge(self::DANGEROUS, self::ARCHIVES), true)) {
                 $score += 35;
-                $findings[] = 'Attachment uses a double extension: ' . $name;
+                $findings[] = 'Attachment uses a double extension: '.$name;
+
                 continue;
             }
 
             if (in_array($ext, self::DANGEROUS, true)) {
                 $score += 40;
-                $findings[] = 'Dangerous executable attachment: ' . $name;
+                $findings[] = 'Dangerous executable attachment: '.$name;
             } elseif (in_array($ext, self::MACRO_DOCS, true)) {
                 $score += 30;
-                $findings[] = 'Macro-enabled document attachment: ' . $name;
+                $findings[] = 'Macro-enabled document attachment: '.$name;
             } elseif (in_array($ext, self::ARCHIVES, true)) {
                 $score += 15;
-                $findings[] = 'Archive attachment (contents unscanned): ' . $name;
+                $findings[] = 'Archive attachment (contents unscanned): '.$name;
             }
         }
 

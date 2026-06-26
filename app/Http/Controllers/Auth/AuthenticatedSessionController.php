@@ -26,15 +26,14 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        if (!Auth::user()->status) {
+        if (! Auth::user()->status) {
 
-    Auth::logout();
+            Auth::logout();
 
-    throw ValidationException::withMessages([
-        'email' =>
-        'Your account has been deactivated.'
-    ]);
-}
+            throw ValidationException::withMessages([
+                'email' => 'Your account has been deactivated.',
+            ]);
+        }
 
         $request->session()->regenerate();
 

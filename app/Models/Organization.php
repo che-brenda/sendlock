@@ -14,7 +14,7 @@ class Organization extends Model
         'email',
         'phone',
         'subscription_plan',
-        'status'
+        'status',
     ];
 
     protected function casts(): array

@@ -14,7 +14,7 @@ namespace App\Services;
 class EmailAuthenticationService
 {
     /**
-     * @param array{spf?:?bool, dkim?:?bool, dmarc?:?bool} $explicit
+     * @param  array{spf?:?bool, dkim?:?bool, dmarc?:?bool}  $explicit
      */
     public static function analyze(string $domain, array $explicit = []): array
     {

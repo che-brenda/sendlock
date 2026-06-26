@@ -42,7 +42,7 @@ class ApprovalController extends Controller
 
         $workflow->approve($approvalRequest, auth()->id(), $validated['notes'] ?? null);
 
-        return back()->with('success', 'Request approved and ' . strtolower($approvalRequest->status) . '.');
+        return back()->with('success', 'Request approved and '.strtolower($approvalRequest->status).'.');
     }
 
     public function reject(Request $request, ApprovalRequest $approvalRequest, ApprovalWorkflow $workflow)

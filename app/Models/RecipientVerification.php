@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class RecipientVerification extends Model
 {
     public const STATUS_PENDING = 'PENDING';
+
     public const STATUS_VERIFIED = 'VERIFIED';
+
     public const STATUS_EXPIRED = 'EXPIRED';
 
     protected $fillable = [

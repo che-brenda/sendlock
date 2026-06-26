@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureHeadOrgAdmin;
+use App\Http\Middleware\EnsureOrgAdmin;
+use App\Http\Middleware\EnsureSuperAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,11 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
 
-    $middleware->alias([
-    'superadmin' => \App\Http\Middleware\EnsureSuperAdmin::class,
-    'headorg.admin' => \App\Http\Middleware\EnsureHeadOrgAdmin::class,
-    'org.admin' => \App\Http\Middleware\EnsureOrgAdmin::class,
-]);
+        $middleware->alias([
+            'superadmin' => EnsureSuperAdmin::class,
+            'headorg.admin' => EnsureHeadOrgAdmin::class,
+            'org.admin' => EnsureOrgAdmin::class,
+        ]);
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {

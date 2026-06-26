@@ -17,46 +17,46 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('organization_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->foreignId('user_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->string('sender_email');
 
             $table->string('sender_domain');
 
             $table->string('subject')
-                  ->nullable();
+                ->nullable();
 
             $table->longText('email_content')
-                  ->nullable();
+                ->nullable();
 
             $table->integer('risk_score')
-                  ->default(0);
+                ->default(0);
 
             $table->string('risk_level')
-                  ->default('LOW');
+                ->default('LOW');
 
             $table->json('findings')
-                  ->nullable();
+                ->nullable();
 
             $table->boolean('is_trusted_domain')
-                  ->default(false);
+                ->default(false);
 
             $table->boolean('is_blocked_domain')
-                  ->default(false);
+                ->default(false);
 
             $table->boolean('spf_pass')
-                  ->default(false);
+                ->default(false);
 
             $table->boolean('dkim_pass')
-                  ->default(false);
+                ->default(false);
 
             $table->boolean('dmarc_pass')
-                  ->default(false);
+                ->default(false);
 
             $table->timestamps();
         });
@@ -70,4 +70,3 @@ return new class extends Migration
         Schema::dropIfExists('email_scans');
     }
 };
-

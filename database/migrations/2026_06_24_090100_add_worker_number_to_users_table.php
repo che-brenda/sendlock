@@ -17,8 +17,8 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('worker_number')
-                  ->nullable()
-                  ->after('organization_id');
+                ->nullable()
+                ->after('organization_id');
 
             $table->unique(['organization_id', 'worker_number']);
         });

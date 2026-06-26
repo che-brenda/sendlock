@@ -14,7 +14,7 @@ class AuditLog extends Model
         'entity_type',
         'entity_id',
         'description',
-        'ip_address'
+        'ip_address',
 
     ];
 

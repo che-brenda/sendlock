@@ -12,23 +12,23 @@ class AuditLogController extends Controller
 
             $logs = AuditLog::with([
                 'user',
-                'organization'
+                'organization',
             ])
-            ->latest()
-            ->paginate(20);
+                ->latest()
+                ->paginate(20);
 
         } else {
 
             $logs = AuditLog::with([
                 'user',
-                'organization'
+                'organization',
             ])
-            ->where(
-                'organization_id',
-                auth()->user()->organization_id
-            )
-            ->latest()
-            ->paginate(20);
+                ->where(
+                    'organization_id',
+                    auth()->user()->organization_id
+                )
+                ->latest()
+                ->paginate(20);
 
         }
 

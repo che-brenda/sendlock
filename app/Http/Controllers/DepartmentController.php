@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AuditLogger;
 use App\Models\Department;
 use Illuminate\Http\Request;
-use App\Helpers\AuditLogger;
 
 class DepartmentController extends Controller
 {
@@ -37,7 +37,7 @@ class DepartmentController extends Controller
             'status' => true,
         ]);
 
-        AuditLogger::log('CREATE', 'DEPARTMENT', $department->id, 'Created department ' . $department->department_name);
+        AuditLogger::log('CREATE', 'DEPARTMENT', $department->id, 'Created department '.$department->department_name);
 
         return redirect()
             ->route('departments.index')
@@ -76,7 +76,7 @@ class DepartmentController extends Controller
             'status' => $request->boolean('status'),
         ]);
 
-        AuditLogger::log('UPDATE', 'DEPARTMENT', $department->id, 'Updated department ' . $department->department_name);
+        AuditLogger::log('UPDATE', 'DEPARTMENT', $department->id, 'Updated department '.$department->department_name);
 
         return redirect()
             ->route('departments.index')
@@ -87,7 +87,7 @@ class DepartmentController extends Controller
     {
         $department = $this->scoped($department);
 
-        AuditLogger::log('DELETE', 'DEPARTMENT', $department->id, 'Deleted department ' . $department->department_name);
+        AuditLogger::log('DELETE', 'DEPARTMENT', $department->id, 'Deleted department '.$department->department_name);
 
         $department->delete();
 

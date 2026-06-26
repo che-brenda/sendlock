@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Organization;
-use App\Models\User;
 use App\Models\TrustedDomain;
 use Database\Seeders\RolesAndPermissionsSeeder;
 

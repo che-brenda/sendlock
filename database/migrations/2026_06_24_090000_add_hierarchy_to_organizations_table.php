@@ -16,14 +16,14 @@ return new class extends Migration
     {
         Schema::table('organizations', function (Blueprint $table) {
             $table->foreignId('parent_id')
-                  ->nullable()
-                  ->after('id')
-                  ->constrained('organizations')
-                  ->nullOnDelete();
+                ->nullable()
+                ->after('id')
+                ->constrained('organizations')
+                ->nullOnDelete();
 
             $table->string('type')
-                  ->default('head')
-                  ->after('organization_name'); // head | sub
+                ->default('head')
+                ->after('organization_name'); // head | sub
         });
     }
 

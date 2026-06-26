@@ -14,22 +14,22 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('organization_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->string('domain');
 
             $table->string('vendor_name')
-                  ->nullable();
+                ->nullable();
 
             $table->boolean('active')
-                  ->default(true);
+                ->default(true);
 
             $table->timestamps();
 
             $table->unique([
                 'organization_id',
-                'domain'
+                'domain',
             ]);
         });
     }
@@ -39,4 +39,3 @@ return new class extends Migration
         Schema::dropIfExists('trusted_domains');
     }
 };
-

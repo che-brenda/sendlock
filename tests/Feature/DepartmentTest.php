@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Organization;
 use App\Models\Department;
+use App\Models\Organization;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 beforeEach(function () {

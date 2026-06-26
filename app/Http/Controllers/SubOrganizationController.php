@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AuditLogger;
 use App\Models\Organization;
 use Illuminate\Http\Request;
-use App\Helpers\AuditLogger;
 
 /**
  * Lets a Head Organization Admin manage the sub-organizations beneath their
@@ -70,7 +70,7 @@ class SubOrganizationController extends Controller
             'CREATE',
             'SUB_ORGANIZATION',
             $subOrganization->id,
-            'Created sub-organization ' . $subOrganization->organization_name
+            'Created sub-organization '.$subOrganization->organization_name
         );
 
         return redirect()

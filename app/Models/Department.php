@@ -10,7 +10,7 @@ class Department extends Model
         'organization_id',
         'department_name',
         'description',
-        'status'
+        'status',
     ];
 
     public function organization()

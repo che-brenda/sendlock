@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Department;
-use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
-use Illuminate\Validation\Rule;
 use App\Helpers\AuditLogger;
+use App\Models\Department;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules;
+use Spatie\Permission\Models\Role;
 
 class UserManagementController extends Controller
 {
@@ -63,12 +63,12 @@ class UserManagementController extends Controller
             'password' => [
                 'required',
                 'confirmed',
-                Rules\Password::defaults()
+                Rules\Password::defaults(),
             ],
         ]);
 
         if (
-            !auth()->user()->hasRole('Super Admin')
+            ! auth()->user()->hasRole('Super Admin')
             && $request->role === 'Super Admin'
         ) {
             abort(403, 'Unauthorized role assignment.');
@@ -77,7 +77,7 @@ class UserManagementController extends Controller
         $user = User::create([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
-            'name' => $request->first_name . ' ' . $request->last_name,
+            'name' => $request->first_name.' '.$request->last_name,
             'job_title' => $request->job_title,
             'email' => $request->email,
             'phone' => $request->phone,
@@ -94,7 +94,7 @@ class UserManagementController extends Controller
             'CREATE',
             'USER',
             $user->id,
-            'Created user ' . $user->email
+            'Created user '.$user->email
         );
 
         return redirect()
@@ -106,13 +106,13 @@ class UserManagementController extends Controller
     {
         $user = User::with([
             'department',
-            'organization'
+            'organization',
         ])
-        ->where(
-            'organization_id',
-            auth()->user()->organization_id
-        )
-        ->findOrFail($user->id);
+            ->where(
+                'organization_id',
+                auth()->user()->organization_id
+            )
+            ->findOrFail($user->id);
 
         return view('users.show', compact('user'));
     }
@@ -162,7 +162,7 @@ class UserManagementController extends Controller
                     ->where(fn ($query) => $query->where('organization_id', $user->organization_id))
                     ->ignore($user->id),
             ],
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
             'phone' => 'nullable|string|max:50',
             'department_id' => 'nullable|exists:departments,id',
             'role' => 'nullable|exists:roles,name',
@@ -181,7 +181,7 @@ class UserManagementController extends Controller
         $user->update([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
-            'name' => $request->first_name . ' ' . $request->last_name,
+            'name' => $request->first_name.' '.$request->last_name,
             'job_title' => $request->job_title,
             'worker_number' => $request->worker_number,
             'email' => $request->email,
@@ -197,7 +197,7 @@ class UserManagementController extends Controller
             'UPDATE',
             'USER',
             $user->id,
-            'Updated user ' . $user->email
+            'Updated user '.$user->email
         );
 
         return redirect()
@@ -214,19 +214,19 @@ class UserManagementController extends Controller
 
         if ($user->hasRole('Super Admin')) {
             return back()->withErrors([
-                'error' => 'Super Admin accounts cannot be managed.'
+                'error' => 'Super Admin accounts cannot be managed.',
             ]);
         }
 
         $user->update([
-            'status' => true
+            'status' => true,
         ]);
 
         AuditLogger::log(
             'ACTIVATE',
             'USER',
             $user->id,
-            'Activated user ' . $user->email
+            'Activated user '.$user->email
         );
 
         return back()->with(
@@ -244,25 +244,25 @@ class UserManagementController extends Controller
 
         if ($user->id === auth()->id()) {
             return back()->withErrors([
-                'error' => 'You cannot deactivate your own account.'
+                'error' => 'You cannot deactivate your own account.',
             ]);
         }
 
         if ($user->hasRole('Super Admin')) {
             return back()->withErrors([
-                'error' => 'Super Admin accounts cannot be managed.'
+                'error' => 'Super Admin accounts cannot be managed.',
             ]);
         }
 
         $user->update([
-            'status' => false
+            'status' => false,
         ]);
 
         AuditLogger::log(
             'DEACTIVATE',
             'USER',
             $user->id,
-            'Deactivated user ' . $user->email
+            'Deactivated user '.$user->email
         );
 
         return back()->with(
@@ -280,13 +280,13 @@ class UserManagementController extends Controller
 
         if ($user->id === auth()->id()) {
             return back()->withErrors([
-                'error' => 'You cannot delete your own account.'
+                'error' => 'You cannot delete your own account.',
             ]);
         }
 
         if ($user->hasRole('Super Admin')) {
             return back()->withErrors([
-                'error' => 'Super Admin cannot be deleted.'
+                'error' => 'Super Admin cannot be deleted.',
             ]);
         }
 
@@ -294,7 +294,7 @@ class UserManagementController extends Controller
             'DELETE',
             'USER',
             $user->id,
-            'Deleted user ' . $user->email
+            'Deleted user '.$user->email
         );
 
         $user->delete();

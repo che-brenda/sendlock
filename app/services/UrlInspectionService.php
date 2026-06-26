@@ -35,7 +35,7 @@ class UrlInspectionService
 
                 if ($displayDomain !== null && $hrefDomain !== null && $displayDomain !== $hrefDomain) {
                     $score += 35;
-                    $findings[] = 'Link text "' . $displayDomain . '" points to a different domain "' . $hrefDomain . '"';
+                    $findings[] = 'Link text "'.$displayDomain.'" points to a different domain "'.$hrefDomain.'"';
                 }
             }
         }
@@ -51,19 +51,20 @@ class UrlInspectionService
 
             if (preg_match('/^\d{1,3}(\.\d{1,3}){3}$/', $host)) {
                 $score += 25;
-                $findings[] = 'Link uses a raw IP address: ' . $host;
+                $findings[] = 'Link uses a raw IP address: '.$host;
+
                 continue;
             }
 
             if (in_array($host, self::SHORTENERS, true)) {
                 $score += 10;
-                $findings[] = 'Link uses a URL shortener: ' . $host;
+                $findings[] = 'Link uses a URL shortener: '.$host;
             }
 
             $tld = strtolower((string) substr(strrchr($host, '.') ?: '', 1));
             if (in_array($tld, self::SUSPICIOUS_TLDS, true)) {
                 $score += 20;
-                $findings[] = 'Link uses a high-risk TLD: .' . $tld;
+                $findings[] = 'Link uses a high-risk TLD: .'.$tld;
             }
         }
 

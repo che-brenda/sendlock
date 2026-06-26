@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ApprovalAction extends Model
 {
     public const ACTION_APPROVED = 'APPROVED';
+
     public const ACTION_REJECTED = 'REJECTED';
 
     protected $fillable = [

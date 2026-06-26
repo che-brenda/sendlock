@@ -13,16 +13,16 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('organization_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->string('department_name');
 
             $table->text('description')
-                  ->nullable();
+                ->nullable();
 
             $table->boolean('status')
-                  ->default(true);
+                ->default(true);
 
             $table->timestamps();
         });

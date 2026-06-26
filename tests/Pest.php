@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -52,9 +54,9 @@ function something()
 /**
  * Create a user belonging to the given organization and assign a role.
  */
-function makeUser(\App\Models\Organization $org, string $role): \App\Models\User
+function makeUser(Organization $org, string $role): User
 {
-    $user = \App\Models\User::factory()->create([
+    $user = User::factory()->create([
         'organization_id' => $org->id,
         'status' => true,
     ]);

@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ThreatIntelDomain;
-use Illuminate\Http\Request;
 use App\Helpers\AuditLogger;
+use App\Models\ThreatIntelDomain;
+use App\Services\ThreatIntelligenceService;
+use Illuminate\Http\Request;
 
 /**
  * Platform-wide threat intelligence list, curated by Super Admins. Shared across
- * all tenants and consumed by {@see \App\Services\ThreatIntelligenceService}.
+ * all tenants and consumed by {@see ThreatIntelligenceService}.
  * Route-gated to Super Admin via the `superadmin` middleware.
  */
 class ThreatIntelController extends Controller
@@ -43,7 +44,7 @@ class ThreatIntelController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        AuditLogger::log('CREATE', 'THREAT_INTEL_DOMAIN', null, 'Added threat domain ' . $domain);
+        AuditLogger::log('CREATE', 'THREAT_INTEL_DOMAIN', null, 'Added threat domain '.$domain);
 
         return back()->with('success', 'Threat domain added.');
     }
@@ -52,7 +53,7 @@ class ThreatIntelController extends Controller
     {
         $threatIntelDomain->delete();
 
-        AuditLogger::log('DELETE', 'THREAT_INTEL_DOMAIN', $threatIntelDomain->id, 'Removed threat domain ' . $threatIntelDomain->domain);
+        AuditLogger::log('DELETE', 'THREAT_INTEL_DOMAIN', $threatIntelDomain->id, 'Removed threat domain '.$threatIntelDomain->domain);
 
         return back()->with('success', 'Threat domain removed.');
     }

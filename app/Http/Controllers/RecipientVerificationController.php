@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AuditLogger;
 use App\Models\ApprovalRequest;
 use App\Services\ApprovalWorkflow;
 use App\Services\Verification\VerificationService;
-use App\Helpers\AuditLogger;
 use Illuminate\Http\Request;
 
 /**
@@ -45,10 +45,10 @@ class RecipientVerificationController extends Controller
             'VERIFICATION_SENT',
             'APPROVAL_REQUEST',
             $approvalRequest->id,
-            'Verification code sent via ' . $validated['channel'] . ' for ' . $approvalRequest->recipient_email
+            'Verification code sent via '.$validated['channel'].' for '.$approvalRequest->recipient_email
         );
 
-        return back()->with('success', 'Verification code sent via ' . $validated['channel'] . '.');
+        return back()->with('success', 'Verification code sent via '.$validated['channel'].'.');
     }
 
     public function verify(Request $request, ApprovalRequest $approvalRequest, VerificationService $service, ApprovalWorkflow $workflow)
@@ -70,10 +70,10 @@ class RecipientVerificationController extends Controller
             'VERIFICATION_CONFIRMED',
             'APPROVAL_REQUEST',
             $approvalRequest->id,
-            'Recipient verified for ' . $approvalRequest->recipient_email
+            'Recipient verified for '.$approvalRequest->recipient_email
         );
 
-        return back()->with('success', 'Recipient verified. Request advanced to ' . $approvalRequest->status . '.');
+        return back()->with('success', 'Recipient verified. Request advanced to '.$approvalRequest->status.'.');
     }
 
     private function authorizeTenant(ApprovalRequest $approvalRequest): void

@@ -27,20 +27,20 @@ class TwilioVerificationChannel implements VerificationChannel
         // Not configured — degrade gracefully to the log stub.
         if (! $sid || ! $token || ! $from) {
             Log::warning('SendLock Twilio not configured; falling back to log channel.', ['mode' => $this->mode]);
-            (new LogVerificationChannel())->send($to, $code, $context);
+            (new LogVerificationChannel)->send($to, $code, $context);
 
             return;
         }
 
-        $toAddress = $this->mode === 'whatsapp' ? 'whatsapp:' . $to : $to;
-        $fromAddress = $this->mode === 'whatsapp' ? 'whatsapp:' . $from : $from;
+        $toAddress = $this->mode === 'whatsapp' ? 'whatsapp:'.$to : $to;
+        $fromAddress = $this->mode === 'whatsapp' ? 'whatsapp:'.$from : $from;
 
         $response = Http::asForm()
             ->withBasicAuth($sid, $token)
             ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
                 'To' => $toAddress,
                 'From' => $fromAddress,
-                'Body' => "Your SendLock verification code is {$code}. " . $context,
+                'Body' => "Your SendLock verification code is {$code}. ".$context,
             ]);
 
         if ($response->failed()) {

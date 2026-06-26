@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TrustedDomain;
-use App\Models\BlockedDomain;
-use App\Models\VerifiedRecipient;
-use App\Models\VendorBankAccount;
-use Illuminate\Http\Request;
 use App\Helpers\AuditLogger;
+use App\Models\BlockedDomain;
+use App\Models\TrustedDomain;
+use App\Models\VendorBankAccount;
+use App\Models\VerifiedRecipient;
+use Illuminate\Http\Request;
 
 /**
  * The Trust Center: an organization's centralized trust ecosystem —
@@ -57,7 +57,7 @@ class TrustCenterController extends Controller
 
         $request->merge(['domain' => $domain]);
         $request->validate([
-            'domain' => 'unique:trusted_domains,domain,NULL,id,organization_id,' . $organizationId,
+            'domain' => 'unique:trusted_domains,domain,NULL,id,organization_id,'.$organizationId,
         ]);
 
         TrustedDomain::create([
@@ -67,7 +67,7 @@ class TrustCenterController extends Controller
             'active' => true,
         ]);
 
-        AuditLogger::log('CREATE', 'TRUSTED_DOMAIN', null, 'Trusted domain ' . $domain);
+        AuditLogger::log('CREATE', 'TRUSTED_DOMAIN', null, 'Trusted domain '.$domain);
 
         return back()->with('success', 'Trusted domain added.');
     }
@@ -78,7 +78,7 @@ class TrustCenterController extends Controller
 
         $trustedDomain->delete();
 
-        AuditLogger::log('DELETE', 'TRUSTED_DOMAIN', $trustedDomain->id, 'Removed trusted domain ' . $trustedDomain->domain);
+        AuditLogger::log('DELETE', 'TRUSTED_DOMAIN', $trustedDomain->id, 'Removed trusted domain '.$trustedDomain->domain);
 
         return back()->with('success', 'Trusted domain removed.');
     }
@@ -102,7 +102,7 @@ class TrustCenterController extends Controller
 
         $request->merge(['domain' => $domain]);
         $request->validate([
-            'domain' => 'unique:blocked_domains,domain,NULL,id,organization_id,' . $organizationId,
+            'domain' => 'unique:blocked_domains,domain,NULL,id,organization_id,'.$organizationId,
         ]);
 
         BlockedDomain::create([
@@ -112,7 +112,7 @@ class TrustCenterController extends Controller
             'active' => true,
         ]);
 
-        AuditLogger::log('CREATE', 'BLOCKED_DOMAIN', null, 'Blocked domain ' . $domain);
+        AuditLogger::log('CREATE', 'BLOCKED_DOMAIN', null, 'Blocked domain '.$domain);
 
         return back()->with('success', 'Blocked domain added.');
     }
@@ -123,7 +123,7 @@ class TrustCenterController extends Controller
 
         $blockedDomain->delete();
 
-        AuditLogger::log('DELETE', 'BLOCKED_DOMAIN', $blockedDomain->id, 'Removed blocked domain ' . $blockedDomain->domain);
+        AuditLogger::log('DELETE', 'BLOCKED_DOMAIN', $blockedDomain->id, 'Removed blocked domain '.$blockedDomain->domain);
 
         return back()->with('success', 'Blocked domain removed.');
     }
@@ -148,7 +148,7 @@ class TrustCenterController extends Controller
 
         $request->merge(['email' => $email]);
         $request->validate([
-            'email' => 'unique:verified_recipients,email,NULL,id,organization_id,' . $organizationId,
+            'email' => 'unique:verified_recipients,email,NULL,id,organization_id,'.$organizationId,
         ]);
 
         VerifiedRecipient::create([
@@ -160,7 +160,7 @@ class TrustCenterController extends Controller
             'verified_at' => now(),
         ]);
 
-        AuditLogger::log('CREATE', 'VERIFIED_RECIPIENT', null, 'Verified recipient ' . $email);
+        AuditLogger::log('CREATE', 'VERIFIED_RECIPIENT', null, 'Verified recipient '.$email);
 
         return back()->with('success', 'Verified recipient added.');
     }
@@ -171,7 +171,7 @@ class TrustCenterController extends Controller
 
         $verifiedRecipient->delete();
 
-        AuditLogger::log('DELETE', 'VERIFIED_RECIPIENT', $verifiedRecipient->id, 'Removed verified recipient ' . $verifiedRecipient->email);
+        AuditLogger::log('DELETE', 'VERIFIED_RECIPIENT', $verifiedRecipient->id, 'Removed verified recipient '.$verifiedRecipient->email);
 
         return back()->with('success', 'Verified recipient removed.');
     }
@@ -205,7 +205,7 @@ class TrustCenterController extends Controller
             'label' => $validated['label'] ?? null,
         ]);
 
-        AuditLogger::log('CREATE', 'VENDOR_BANK_ACCOUNT', null, 'Vendor bank account for ' . $validated['vendor_domain']);
+        AuditLogger::log('CREATE', 'VENDOR_BANK_ACCOUNT', null, 'Vendor bank account for '.$validated['vendor_domain']);
 
         return back()->with('success', 'Vendor bank account added.');
     }
@@ -216,7 +216,7 @@ class TrustCenterController extends Controller
 
         $vendorBankAccount->delete();
 
-        AuditLogger::log('DELETE', 'VENDOR_BANK_ACCOUNT', $vendorBankAccount->id, 'Removed vendor bank account ' . $vendorBankAccount->vendor_domain);
+        AuditLogger::log('DELETE', 'VENDOR_BANK_ACCOUNT', $vendorBankAccount->id, 'Removed vendor bank account '.$vendorBankAccount->vendor_domain);
 
         return back()->with('success', 'Vendor bank account removed.');
     }

@@ -14,8 +14,8 @@ return new class extends Migration
     {
         Schema::table('email_scans', function (Blueprint $table) {
             $table->string('decision')
-                  ->default('ALLOW')
-                  ->after('risk_level');
+                ->default('ALLOW')
+                ->after('risk_level');
         });
     }
 

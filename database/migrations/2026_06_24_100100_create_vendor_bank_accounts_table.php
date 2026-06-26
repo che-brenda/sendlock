@@ -17,8 +17,8 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('organization_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->string('vendor_name')->nullable();
             $table->string('vendor_domain');

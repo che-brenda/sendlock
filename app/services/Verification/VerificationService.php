@@ -44,7 +44,7 @@ class VerificationService
         $this->resolveChannel($channel)->send(
             $to,
             $code,
-            'Verify recipient for "' . ($request->subject ?: 'outbound email') . '"'
+            'Verify recipient for "'.($request->subject ?: 'outbound email').'"'
         );
 
         return $verification;
@@ -96,6 +96,6 @@ class VerificationService
             return new TwilioVerificationChannel($channel);
         }
 
-        return new LogVerificationChannel();
+        return new LogVerificationChannel;
     }
 }

@@ -1,41 +1,49 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DepartmentController;
-use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\OrganizationManagementController;
+use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AuditLogController;
-use App\Models\User; 
-use App\Models\Department; 
-use App\Models\Organization; 
-use App\Models\AuditLog;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmailScanController;
-use App\Http\Controllers\SubOrganizationController;
-use App\Http\Controllers\TrustCenterController;
+use App\Http\Controllers\FlaggedDomainController;
+use App\Http\Controllers\OrganizationManagementController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProtectedEmailController;
 use App\Http\Controllers\RecipientVerificationController;
-use App\Http\Controllers\ApprovalController;
-use App\Http\Controllers\ThreatIntelController;
 use App\Http\Controllers\SecurityInsightsController;
-use App\Http\Controllers\FlaggedDomainController;
+use App\Http\Controllers\SubOrganizationController;
+use App\Http\Controllers\ThreatIntelController;
+use App\Http\Controllers\TrustCenterController;
+use App\Http\Controllers\UserManagementController;
+use App\Models\AuditLog;
+use App\Models\Department;
+use App\Models\Organization;
+use App\Models\User;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () { if (auth()->user()->hasRole('Super Admin')) { 
-    $organizations = Organization::count(); $users = User::count(); 
-    $departments = Department::count(); $activeUsers = User::where('status', true)->count(); 
-    $inactiveUsers = User::where('status', false)->count(); $recentLogs = AuditLog::latest() ->take(10) ->get(); } else { 
-        $organizationId = auth()->user()->organization_id; $organizations = 1; 
-        $users = User::where( 'organization_id', $organizationId )->count(); 
-        $departments = Department::where( 'organization_id', $organizationId )->count(); 
-        $activeUsers = User::where( 'organization_id', $organizationId ) ->where('status', true) ->count(); 
-        $inactiveUsers = User::where( 'organization_id', $organizationId ) ->where('status', false) ->count(); 
-        $recentLogs = AuditLog::where( 'organization_id', $organizationId ) ->latest() ->take(10) ->get(); 
-        } return view('dashboard', compact( 'organizations', 'users', 'departments', 'activeUsers', 'inactiveUsers', 'recentLogs' )); 
-        })->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', function () {
+    if (auth()->user()->hasRole('Super Admin')) {
+        $organizations = Organization::count();
+        $users = User::count();
+        $departments = Department::count();
+        $activeUsers = User::where('status', true)->count();
+        $inactiveUsers = User::where('status', false)->count();
+        $recentLogs = AuditLog::latest()->take(10)->get();
+    } else {
+        $organizationId = auth()->user()->organization_id;
+        $organizations = 1;
+        $users = User::where('organization_id', $organizationId)->count();
+        $departments = Department::where('organization_id', $organizationId)->count();
+        $activeUsers = User::where('organization_id', $organizationId)->where('status', true)->count();
+        $inactiveUsers = User::where('organization_id', $organizationId)->where('status', false)->count();
+        $recentLogs = AuditLog::where('organization_id', $organizationId)->latest()->take(10)->get();
+    }
+
+return view('dashboard', compact('organizations', 'users', 'departments', 'activeUsers', 'inactiveUsers', 'recentLogs'));
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -51,7 +59,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/flagged-domains/request-approval', [FlaggedDomainController::class, 'requestApproval'])->name('flagged-domains.request-approval');
 });
 
-
 Route::post(
     '/users/{user}/activate',
     [UserManagementController::class, 'activate']
@@ -61,7 +68,6 @@ Route::post(
     '/users/{user}/deactivate',
     [UserManagementController::class, 'deactivate']
 )->name('users.deactivate');
-
 
 Route::middleware(['auth'])->group(function () {
 
@@ -74,7 +80,7 @@ Route::get('/super-admin-test', function () {
     return 'Super Admin Middleware Works';
 })->middleware(['auth', 'superadmin']);
 
-Route::middleware(['auth','superadmin'])->group(function () {
+Route::middleware(['auth', 'superadmin'])->group(function () {
 
     Route::resource(
         'organizations',
@@ -182,8 +188,7 @@ Route::middleware(['auth', 'org.admin'])->group(function () {
 */
 Route::middleware(['auth'])->group(function () {
 
-    $placeholder = fn (string $title, string $phase, string $summary) =>
-        view('placeholder', compact('title', 'phase', 'summary'));
+    $placeholder = fn (string $title, string $phase, string $summary) => view('placeholder', compact('title', 'phase', 'summary'));
 
     Route::get('/billing', fn () => $placeholder(
         'Plans & Billing',

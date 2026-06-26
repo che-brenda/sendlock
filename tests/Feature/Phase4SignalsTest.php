@@ -2,10 +2,11 @@
 
 use App\Models\Organization;
 use App\Models\ThreatIntelDomain;
-use App\Services\RiskEngine;
-use App\Services\UrlInspectionService;
+use App\Models\TrustedDomain;
 use App\Services\AttachmentAnalysisService;
 use App\Services\EmailAuthenticationService;
+use App\Services\RiskEngine;
+use App\Services\UrlInspectionService;
 
 beforeEach(function () {
     $this->org = Organization::create(['organization_name' => 'Acme', 'type' => 'head', 'status' => true]);
@@ -61,7 +62,7 @@ test('attachments and explicit auth failures raise the engine score', function (
 });
 
 test('a trusted benign email is unaffected by the new signals', function () {
-    \App\Models\TrustedDomain::create(['organization_id' => $this->org->id, 'domain' => 'partner.com', 'active' => true]);
+    TrustedDomain::create(['organization_id' => $this->org->id, 'domain' => 'partner.com', 'active' => true]);
 
     $result = RiskEngine::evaluate([
         'sender_email' => 'hi@partner.com',

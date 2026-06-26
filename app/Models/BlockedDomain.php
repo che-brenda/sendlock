@@ -11,13 +11,13 @@ class BlockedDomain extends Model
         'organization_id',
         'domain',
         'reason',
-        'active'
+        'active',
 
     ];
 
     protected $casts = [
 
-        'active' => 'boolean'
+        'active' => 'boolean',
 
     ];
 
@@ -28,4 +28,3 @@ class BlockedDomain extends Model
         );
     }
 }
-

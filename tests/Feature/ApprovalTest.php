@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Organization;
 use App\Models\ApprovalRequest;
+use App\Models\Organization;
 use App\Services\ApprovalWorkflow;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
@@ -12,7 +12,7 @@ beforeEach(function () {
 
 function pendingApprovalRequest(Organization $org, int $userId): ApprovalRequest
 {
-    return (new ApprovalWorkflow())->createFromEvaluation(
+    return (new ApprovalWorkflow)->createFromEvaluation(
         ['risk_score' => 50, 'risk_level' => 'MEDIUM', 'decision' => 'MANAGER_APPROVAL'],
         ['recipient_email' => 'vendor@partner.com', 'subject' => 'Invoice', 'email_content' => 'Body'],
         $org->id,

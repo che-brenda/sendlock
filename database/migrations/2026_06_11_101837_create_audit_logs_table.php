@@ -16,27 +16,27 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('organization_id')
-                  ->nullable()
-                  ->constrained()
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
 
             $table->foreignId('user_id')
-                  ->nullable()
-                  ->constrained()
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
 
             $table->string('action');
 
             $table->string('entity_type');
 
             $table->unsignedBigInteger('entity_id')
-                  ->nullable();
+                ->nullable();
 
             $table->text('description')
-                  ->nullable();
+                ->nullable();
 
             $table->string('ip_address')
-                  ->nullable();
+                ->nullable();
 
             $table->timestamps();
         });

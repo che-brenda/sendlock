@@ -38,7 +38,7 @@ class ContentIntelligenceService
 
     public static function analyze(?string $subject, ?string $content): array
     {
-        $haystack = strtolower(trim(($subject ?? '') . ' ' . ($content ?? '')));
+        $haystack = strtolower(trim(($subject ?? '').' '.($content ?? '')));
 
         if ($haystack === '') {
             return ['score' => 0, 'findings' => []];
@@ -50,7 +50,7 @@ class ContentIntelligenceService
         foreach (self::INTENT_PHRASES as $phrase => $weight) {
             if (str_contains($haystack, $phrase)) {
                 $score += $weight;
-                $findings[] = 'Fraud-intent language detected: "' . $phrase . '"';
+                $findings[] = 'Fraud-intent language detected: "'.$phrase.'"';
             }
         }
 

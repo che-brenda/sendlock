@@ -15,26 +15,19 @@ class AuditLogger
 
         AuditLog::create([
 
-            'organization_id' =>
-                auth()->user()?->organization_id,
+            'organization_id' => auth()->user()?->organization_id,
 
-            'user_id' =>
-                auth()->id(),
+            'user_id' => auth()->id(),
 
-            'action' =>
-                $action,
+            'action' => $action,
 
-            'entity_type' =>
-                $entityType,
+            'entity_type' => $entityType,
 
-            'entity_id' =>
-                $entityId,
+            'entity_id' => $entityId,
 
-            'description' =>
-                $description,
+            'description' => $description,
 
-            'ip_address' =>
-                request()->ip(),
+            'ip_address' => request()->ip(),
 
         ]);
     }

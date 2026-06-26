@@ -31,7 +31,7 @@ class ThreatIntelligenceService
 
         return [
             'score' => $score,
-            'findings' => ['Domain flagged by threat intelligence (' . $label . ', ' . strtolower((string) $entry->severity) . ' severity)'],
+            'findings' => ['Domain flagged by threat intelligence ('.$label.', '.strtolower((string) $entry->severity).' severity)'],
         ];
     }
 }

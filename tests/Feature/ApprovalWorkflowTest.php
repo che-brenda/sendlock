@@ -1,15 +1,15 @@
 <?php
 
+use App\Models\ApprovalRequest;
 use App\Models\Organization;
 use App\Models\User;
-use App\Models\ApprovalRequest;
 use App\Models\VerifiedRecipient;
 use App\Services\ApprovalWorkflow;
 
 beforeEach(function () {
     $this->org = Organization::create(['organization_name' => 'Acme', 'type' => 'head', 'status' => true]);
     $this->user = User::factory()->create(['organization_id' => $this->org->id, 'status' => true]);
-    $this->workflow = new ApprovalWorkflow();
+    $this->workflow = new ApprovalWorkflow;
 });
 
 function evaluation(string $decision, int $score = 50, string $level = 'MEDIUM'): array

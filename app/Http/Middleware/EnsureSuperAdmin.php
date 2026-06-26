@@ -9,7 +9,7 @@ class EnsureSuperAdmin
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!auth()->user()->hasRole('Super Admin')) {
+        if (! auth()->user()->hasRole('Super Admin')) {
 
             abort(403);
 

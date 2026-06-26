@@ -11,7 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable([
-'first_name',
+    'first_name',
     'last_name',
     'name',
     'job_title',
@@ -22,26 +22,26 @@ use Spatie\Permission\Traits\HasRoles;
     'worker_number',
     'department_id',
     'status',
-    'last_login'
+    'last_login',
 ])]
 #[Hidden([
     'password',
-    'remember_token'
+    'remember_token',
 ])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     public function organization()
     {
         return $this->belongsTo(Organization::class);
     }
-    
+
     public function department()
-{
-    return $this->belongsTo(Department::class);
-}
+    {
+        return $this->belongsTo(Department::class);
+    }
 
     protected function casts(): array
     {

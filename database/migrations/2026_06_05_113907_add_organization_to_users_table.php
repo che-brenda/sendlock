@@ -10,28 +10,31 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::table('users', function (Blueprint $table) {
+    {
+        Schema::table('users', function (Blueprint $table) {
 
-        $table->foreignId('organization_id')
-              ->nullable()
-              ->constrained('organizations')
-              ->cascadeOnDelete();
+            $table->foreignId('organization_id')
+                ->nullable()
+                ->constrained('organizations')
+                ->cascadeOnDelete();
 
-        $table->boolean('status')
-              ->default(true);
+            $table->boolean('status')
+                ->default(true);
 
-        $table->timestamp('last_login')
-              ->nullable();
+            $table->timestamp('last_login')
+                ->nullable();
 
-    });
-}    /**
+        });
+    }
+
+    /**
      * Reverse the migrations.
      */
     public function down(): void
-{
-    Schema::table('users', function (Blueprint $table) {
-        $table->dropConstrainedForeignId('organization_id');
-        $table->dropColumn(['status', 'last_login']);
-    });
-}};
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('organization_id');
+            $table->dropColumn(['status', 'last_login']);
+        });
+    }
+};

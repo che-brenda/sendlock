@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Organization;
 use App\Models\ApprovalRequest;
+use App\Models\Organization;
 use App\Models\RecipientVerification;
 use App\Services\ApprovalWorkflow;
 use App\Services\Verification\VerificationService;
@@ -14,7 +14,7 @@ beforeEach(function () {
 
 function pendingVerificationRequest(Organization $org, int $userId): ApprovalRequest
 {
-    return (new ApprovalWorkflow())->createFromEvaluation(
+    return (new ApprovalWorkflow)->createFromEvaluation(
         ['risk_score' => 75, 'risk_level' => 'HIGH', 'decision' => 'RECIPIENT_VERIFY'],
         ['recipient_email' => 'vendor@partner.com', 'subject' => 'Invoice', 'email_content' => 'Body'],
         $org->id,
@@ -41,7 +41,7 @@ test('verifying with the correct code advances the request', function () {
     $user = makeUser($this->org, 'Security Officer');
     $req = pendingVerificationRequest($this->org, $user->id);
 
-    $verification = (new VerificationService())->issue($req, 'email');
+    $verification = (new VerificationService)->issue($req, 'email');
 
     $this->actingAs($user)
         ->post(route('recipient-verification.verify', $req), ['code' => $verification->code])
@@ -56,7 +56,7 @@ test('verifying with a wrong code fails and keeps the request pending', function
     $user = makeUser($this->org, 'Security Officer');
     $req = pendingVerificationRequest($this->org, $user->id);
 
-    (new VerificationService())->issue($req, 'email');
+    (new VerificationService)->issue($req, 'email');
 
     $this->actingAs($user)
         ->post(route('recipient-verification.verify', $req), ['code' => '000000'])

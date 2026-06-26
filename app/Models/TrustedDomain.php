@@ -11,13 +11,13 @@ class TrustedDomain extends Model
         'organization_id',
         'domain',
         'vendor_name',
-        'active'
+        'active',
 
     ];
 
     protected $casts = [
 
-        'active' => 'boolean'
+        'active' => 'boolean',
 
     ];
 
@@ -28,5 +28,3 @@ class TrustedDomain extends Model
         );
     }
 }
-
-

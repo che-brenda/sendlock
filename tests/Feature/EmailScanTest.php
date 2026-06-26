@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Organization;
-use App\Models\EmailScan;
 use App\Models\BlockedDomain;
+use App\Models\EmailScan;
+use App\Models\Organization;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 beforeEach(function () {
