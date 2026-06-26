@@ -158,7 +158,9 @@ is the single entry point. It composes three signal services (all in `app/servic
   interface) are consulted and verdicts cached in `threat_intel_cache` (`ThreatIntelCache`, global)
   for `sendlock.threat_feeds.cache_ttl` minutes. Feeds are opt-in via `SENDLOCK_THREAT_FEEDS`
   (comma-separated keys) **and** a per-feed API key; with none enabled (default) no external calls
-  are made. A feed failure degrades to no score. Tests use `Http::fake`.
+  are made. A feed failure degrades to no score. Tests use `Http::fake`. Bulk phishing lists
+  (OpenPhish/PhishTank) are imported into the same cache by the `sendlock:import-threat-feeds`
+  command (scheduled hourly in `routes/console.php`, no-op unless `SENDLOCK_THREAT_LISTS` is set).
 
 Score → level/decision: ≥90 CRITICAL/QUARANTINE, ≥70 HIGH/RECIPIENT_VERIFY, ≥30
 MEDIUM/MANAGER_APPROVAL, ≥10 LOW/ALLOW, else SAFE/ALLOW. Every signal service is additive and

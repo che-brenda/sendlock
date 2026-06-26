@@ -100,9 +100,11 @@ verdicts normalized + cached in `threat_intel_cache` (`ThreatIntelCache`, migrat
 Covered by `tests/Feature/ThreatFeedsTest.php` (`Http::fake`, cache-hit-avoids-2nd-call, curated
 precedence, graceful degrade). *Follow-on: AbuseIPDB (IP-based, needs an IP signal) — not yet wired.*
 
-**T2.2 — Phishing list importers (free)** → scheduled commands pulling **OpenPhish** + **PhishTank**
-into `threat_intel_cache`. Needs: PhishTank registration key (free); a `schedule()` entry (the
-`composer dev` queue/scheduler already runs). Tests: faked feed body → rows imported.
+**T2.2 — Phishing list importers (free)** ✅ **SHIPPED** → `app/Console/Commands/ImportThreatFeeds.php`
+(`sendlock:import-threat-feeds`) pulls OpenPhish (no key) + PhishTank (optional key) into
+`threat_intel_cache`; scheduled hourly in `routes/console.php`, **no-op unless `SENDLOCK_THREAT_LISTS`
+is set** (safe to schedule unconditionally — never fetches without opt-in). Covered by
+`tests/Feature/ThreatListImportTest.php` (`Http::fake`, URL→domain extraction, graceful fetch failure).
 
 **T2.3 — AI content classification on Gemini (free tier)** ✅ **SHIPPED** → `app/services/Ai/`
 (`ContentClassifier` interface + `NullContentClassifier` default + `GeminiContentClassifier`), bound

@@ -93,6 +93,17 @@ return [
         'virustotal' => [
             'key' => env('VIRUSTOTAL_API_KEY'),
         ],
+
+        // Bulk phishing-list feeds imported on a schedule into threat_intel_cache
+        // (distinct from the per-domain live feeds above). "enabled" is a
+        // comma-separated list of list-feed keys (openphish, phishtank); empty =
+        // the importer is a no-op, so nothing is fetched without opting in.
+        'lists' => [
+            'enabled' => array_values(array_filter(array_map('trim', explode(',', (string) env('SENDLOCK_THREAT_LISTS', ''))))),
+            'openphish_url' => env('OPENPHISH_FEED_URL', 'https://openphish.com/feed.txt'),
+            'phishtank_url' => env('PHISHTANK_FEED_URL', 'https://data.phishtank.com/data/online-valid.json'),
+            'phishtank_key' => env('PHISHTANK_API_KEY'),
+        ],
     ],
 
     /*
