@@ -92,20 +92,25 @@ keys; beta deployments set the keys. **Respect free-tier rate limits with cachin
 
 ### T2 tickets
 
-**T2.1 — Threat-feed drivers (free tiers)** → Backlog **E2**, scoped to the free providers first.
-Build `ThreatFeed` interface + `GoogleSafeBrowsingFeed`, `VirusTotalFeed`, `AbuseIpDbFeed`. Normalize
-to `{indicator, type, severity, source}` → `threat_intel_cache` (TTL). `ThreatIntelligenceService`
-consults cache → live feed → internal list.
-Needs: `.env` keys `GSB_API_KEY`, `VIRUSTOTAL_API_KEY`, `ABUSEIPDB_KEY`; `config/sendlock.php` feed
-block; default driver `internal`/`null`. **Cache aggressively** — VirusTotal free is ~4/min.
-Tests: `Http::fake()` canned responses; cache hit avoids a 2nd call.
+**T2.1 — Threat-feed drivers (free tiers)** ✅ **SHIPPED** (Safe Browsing + VirusTotal) →
+`app/services/ThreatFeeds/` (`ThreatFeed` interface + `GoogleSafeBrowsingFeed` + `VirusTotalFeed`),
+verdicts normalized + cached in `threat_intel_cache` (`ThreatIntelCache`, migration `2026_06_26_130000`).
+`ThreatIntelligenceService` now checks curated list → cache → live feeds. Opt-in via
+`SENDLOCK_THREAT_FEEDS` + per-feed API key (default empty = no calls); failures degrade to no score.
+Covered by `tests/Feature/ThreatFeedsTest.php` (`Http::fake`, cache-hit-avoids-2nd-call, curated
+precedence, graceful degrade). *Follow-on: AbuseIPDB (IP-based, needs an IP signal) — not yet wired.*
 
 **T2.2 — Phishing list importers (free)** → scheduled commands pulling **OpenPhish** + **PhishTank**
 into `threat_intel_cache`. Needs: PhishTank registration key (free); a `schedule()` entry (the
 `composer dev` queue/scheduler already runs). Tests: faked feed body → rows imported.
 
-**T2.3 — AI content classification on Gemini (free tier)** → Backlog **C1**, but the **first concrete
-driver is Gemini, not Claude**. Build:
+**T2.3 — AI content classification on Gemini (free tier)** ✅ **SHIPPED** → `app/services/Ai/`
+(`ContentClassifier` interface + `NullContentClassifier` default + `GeminiContentClassifier`), bound
+in `AppServiceProvider` from `sendlock.ai.driver`, composed into `RiskEngine` after the rule-based
+content pass (capped 50, degrades to no signal on any error). Config + `.env.example` keys
+(`SENDLOCK_AI_DRIVER`, `GEMINI_API_KEY`, `GEMINI_MODEL`). Covered by `tests/Feature/AiContentTest.php`
+(`Http::fake`, cap, graceful degrade, RiskEngine composition). Claude is the Tier 3 driver swap (T3.1).
+*Original ticket detail:*
 - `ContentClassifier` interface + `NullContentClassifier` (default) + **`GeminiContentClassifier`**
   (Laravel `Http` → Google Generative Language API, strict-JSON response).
 - Compose into `RiskEngine` after the rule-based content service; degrade to rules-only on API

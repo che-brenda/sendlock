@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Services\Ai\ContentClassifier;
+
 /**
  * Decision Engine — composes the domain, content and financial intelligence
  * services into a single risk verdict for an outbound/inbound email.
@@ -43,6 +45,13 @@ class RiskEngine
             $email['email_content'] ?? null
         );
 
+        // AI deep pass (behind the cheap rule-based content service). Null driver
+        // by default → no signal; resolved from config in AppServiceProvider.
+        $aiResult = app(ContentClassifier::class)->classify(
+            $email['subject'] ?? null,
+            $email['email_content'] ?? null
+        );
+
         $financialResult = FinancialDataService::analyze(
             $email['email_content'] ?? null,
             $domain,
@@ -57,6 +66,7 @@ class RiskEngine
 
         $score = $domainResult['score']
             + $contentResult['score']
+            + $aiResult['score']
             + $financialResult['score']
             + $authResult['score']
             + $headerResult['score']
@@ -67,6 +77,7 @@ class RiskEngine
         $findings = array_merge(
             $domainResult['findings'],
             $contentResult['findings'],
+            $aiResult['findings'],
             $financialResult['findings'],
             $authResult['findings'],
             $headerResult['findings'],
@@ -80,7 +91,7 @@ class RiskEngine
         // Confidence reflects how many independent signal services corroborate
         // the verdict. A lone heuristic is less certain than several agreeing.
         $contributing = 0;
-        foreach ([$domainResult, $contentResult, $financialResult, $authResult, $headerResult, $urlResult, $attachmentResult, $threatResult] as $part) {
+        foreach ([$domainResult, $contentResult, $aiResult, $financialResult, $authResult, $headerResult, $urlResult, $attachmentResult, $threatResult] as $part) {
             if (($part['score'] ?? 0) > 0) {
                 $contributing++;
             }

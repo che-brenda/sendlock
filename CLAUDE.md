@@ -126,6 +126,12 @@ is the single entry point. It composes three signal services (all in `app/servic
   use can be warned on — new types must be added to `FlaggedDomainService::SEVERITY`.
 - `ContentIntelligenceService` — fraud-intent phrase weights (bank change, wire transfer,
   urgency…), capped at 65.
+- `ContentClassifier` (AI deep pass, `app/services/Ai/`) — runs after the rule-based content
+  service; `NullContentClassifier` (default, no-op) and `GeminiContentClassifier` (Google
+  free-tier Gemini, beta) implement the same contract — Claude is the Tier 3 production swap.
+  Driver bound in `AppServiceProvider` from `sendlock.ai.driver`; resolved in `RiskEngine` via
+  `app(ContentClassifier::class)`. Capped at 50, degrades to no signal on any error/missing key/
+  empty content. Tests use `Http::fake`.
 - `FinancialDataService` — extracts IBAN/SWIFT/account numbers and compares them to the org's
   `VendorBankAccount` baseline; a mismatch (+60) is the strongest BEC signal.
 
@@ -145,9 +151,14 @@ is the single entry point. It composes three signal services (all in `app/servic
   content the engines analyse, and its filename joins the attachment checks. Enable real OCR with
   `SENDLOCK_OCR_DRIVER=tesseract` + the Tesseract binary on PATH (`TesseractOcrDriver` degrades to
   empty on any failure). Tests bind a fake `OcrDriver` in the container, so the suite stays offline.
-- `ThreatIntelligenceService` — matches the domain against the platform `ThreatIntelDomain`
-  list (severity → score). Managed by Super Admin via `ThreatIntelController` (`threat-intel`,
-  `superadmin`-gated); the list is global, not tenant-scoped.
+- `ThreatIntelligenceService` — the curated platform `ThreatIntelDomain` list (severity → score,
+  managed by Super Admin via `ThreatIntelController`, `superadmin`-gated, global/not tenant-scoped)
+  is authoritative and checked first. For domains not on it, the configured external feeds
+  (`app/services/ThreatFeeds/`: `GoogleSafeBrowsingFeed`, `VirusTotalFeed` behind the `ThreatFeed`
+  interface) are consulted and verdicts cached in `threat_intel_cache` (`ThreatIntelCache`, global)
+  for `sendlock.threat_feeds.cache_ttl` minutes. Feeds are opt-in via `SENDLOCK_THREAT_FEEDS`
+  (comma-separated keys) **and** a per-feed API key; with none enabled (default) no external calls
+  are made. A feed failure degrades to no score. Tests use `Http::fake`.
 
 Score → level/decision: ≥90 CRITICAL/QUARANTINE, ≥70 HIGH/RECIPIENT_VERIFY, ≥30
 MEDIUM/MANAGER_APPROVAL, ≥10 LOW/ALLOW, else SAFE/ALLOW. Every signal service is additive and

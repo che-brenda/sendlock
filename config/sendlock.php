@@ -67,4 +67,55 @@ return [
         'timeout' => env('SENDLOCK_OCR_TIMEOUT', 30),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | External threat-intelligence feeds
+    |--------------------------------------------------------------------------
+    |
+    | Reputation sources consulted (in order) when a domain is not on the curated
+    | platform list. "enabled" is a comma-separated list of feed keys
+    | (e.g. "google_safe_browsing,virustotal"); empty = no external calls, the
+    | safe default. A feed only runs if its API key is also set. Verdicts are
+    | cached in `threat_intel_cache` for `cache_ttl` minutes to respect free-tier
+    | rate limits.
+    |
+    */
+
+    'threat_feeds' => [
+        'enabled' => array_values(array_filter(array_map('trim', explode(',', (string) env('SENDLOCK_THREAT_FEEDS', ''))))),
+
+        'cache_ttl' => env('SENDLOCK_THREAT_CACHE_TTL', 720),
+
+        'google_safe_browsing' => [
+            'key' => env('GOOGLE_SAFE_BROWSING_KEY'),
+        ],
+
+        'virustotal' => [
+            'key' => env('VIRUSTOTAL_API_KEY'),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI content classification
+    |--------------------------------------------------------------------------
+    |
+    | Deep content analysis behind the cheap rule-based pass. "null" contributes
+    | nothing (default). "gemini" uses Google's free-tier Gemini API (beta);
+    | "claude" uses the Anthropic API (production) — both implement the same
+    | ContentClassifier contract, so it's a driver swap. Degrades to no signal on
+    | any provider error.
+    |
+    */
+
+    'ai' => [
+        'driver' => env('SENDLOCK_AI_DRIVER', 'null'),
+        'timeout' => env('SENDLOCK_AI_TIMEOUT', 12),
+
+        'gemini' => [
+            'key' => env('GEMINI_API_KEY'),
+            'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
+        ],
+    ],
+
 ];
