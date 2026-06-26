@@ -143,11 +143,18 @@ driver swap thanks to Tiers 1–2.**
 
 ### T3 tickets
 
-**T3.1 — Promote AI to Claude** → add `ClaudeContentClassifier` implementing the same
-`ContentClassifier` interface from T2.3. **Before building, consult the `claude-api` skill** for current
-model IDs (e.g. `claude-haiku-4-5` for cost, `claude-sonnet-4-6` for accuracy), pricing, and the
-strict-JSON / tool-use output pattern. Needs: `SENDLOCK_AI_DRIVER=claude`, `ANTHROPIC_API_KEY`. No
-`RiskEngine` change — pure driver swap. Tests: `Http::fake()` Anthropic response.
+**T3.0 — Per-org plan/feature gate** ✅ **SHIPPED** → reuses the existing
+`organizations.subscription_plan` column; `config('sendlock.plans')` maps plan → features and
+`Organization::hasFeature()` is the gate. `RiskEngine` calls it before the AI classifier (only when a
+non-null driver is set), so a free/beta org never triggers a paid provider. Covered by
+`tests/Feature/PlanGateTest.php`. Plans: free / beta / pro / enterprise.
+
+**T3.1 — Promote AI to Claude** ✅ **SHIPPED** → `ClaudeContentClassifier` (Anthropic Messages API,
+raw HTTP, anthropic-version 2023-06-01, strict-JSON via `output_config.format`), registered in
+`AppServiceProvider` for `SENDLOCK_AI_DRIVER=claude`. Model defaults to `claude-opus-4-8`
+(`ANTHROPIC_MODEL` override) — per the `claude-api` skill (don't downgrade for cost; user's choice).
+Pure driver swap, no `RiskEngine` change; degrades on error/refusal. Covered by
+`tests/Feature/ClaudeContentTest.php` (`Http::fake`, header/schema assertion, refusal degrade, gate).
 
 **T3.2 — Twilio SMS + WhatsApp (already built)** → just enablement + docs. `TwilioVerificationChannel`
 exists and **degrades to the log stub without creds**. Needs: `SENDLOCK_VERIFICATION_DRIVER=twilio`,

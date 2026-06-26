@@ -50,6 +50,25 @@ class Organization extends Model
         return $this->hasMany(Organization::class, 'parent_id');
     }
 
+    /**
+     * Whether this organization's plan entitles it to a feature (e.g.
+     * 'ai_classification', 'sms_verification'). Plan → feature mapping lives in
+     * config('sendlock.plans'); this is the gate that prevents paid providers
+     * from firing for non-entitled tenants. See config/sendlock.php.
+     */
+    public function hasFeature(string $feature): bool
+    {
+        $default = (string) config('sendlock.default_plan', 'free');
+        $plan = strtolower((string) ($this->subscription_plan ?: $default));
+
+        $features = (array) config(
+            "sendlock.plans.{$plan}",
+            config("sendlock.plans.{$default}", [])
+        );
+
+        return in_array('*', $features, true) || in_array($feature, $features, true);
+    }
+
     public function isHead(): bool
     {
         return is_null($this->parent_id);

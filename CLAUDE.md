@@ -92,6 +92,12 @@ reference implementation. When adding any new tenant-owned resource, replicate t
 - Middleware aliases (registered in `bootstrap/app.php`): `superadmin` (`EnsureSuperAdmin`),
   `headorg.admin` (`EnsureHeadOrgAdmin` — super + head admin), `org.admin` (`EnsureOrgAdmin`
   — super + head + org admin).
+- **Plans & feature entitlements (the paid-feature gate):** `organizations.subscription_plan`
+  (default `Free`) maps to a feature list via `config('sendlock.plans')`; `Organization::hasFeature($f)`
+  is the gate that keeps paid providers from firing for non-entitled tenants (e.g.
+  `ai_classification` for beta+, `sms_verification` for pro+). Check it before any billable call —
+  `RiskEngine` already gates the AI classifier this way. Plans: `free` (none), `beta`
+  (ai_classification), `pro` (+ sms/whatsapp verification), `enterprise` (`*` = all).
 
 ### Navigation & UI shell
 The layout is a role-aware left sidebar (`layouts/navigation.blade.php`) + top bar
@@ -127,11 +133,15 @@ is the single entry point. It composes three signal services (all in `app/servic
 - `ContentIntelligenceService` — fraud-intent phrase weights (bank change, wire transfer,
   urgency…), capped at 65.
 - `ContentClassifier` (AI deep pass, `app/services/Ai/`) — runs after the rule-based content
-  service; `NullContentClassifier` (default, no-op) and `GeminiContentClassifier` (Google
-  free-tier Gemini, beta) implement the same contract — Claude is the Tier 3 production swap.
-  Driver bound in `AppServiceProvider` from `sendlock.ai.driver`; resolved in `RiskEngine` via
-  `app(ContentClassifier::class)`. Capped at 50, degrades to no signal on any error/missing key/
-  empty content. Tests use `Http::fake`.
+  service; `NullContentClassifier` (default, no-op), `GeminiContentClassifier` (Google free-tier
+  Gemini, beta), and `ClaudeContentClassifier` (Anthropic Messages API, raw HTTP + strict-JSON
+  `output_config.format`, paid/production) all implement the same contract — promoting beta→prod
+  is a driver swap (`SENDLOCK_AI_DRIVER`). Driver bound in `AppServiceProvider` from
+  `sendlock.ai.driver`. **The AI call only fires when the tenant's plan entitles it** — `RiskEngine`
+  checks `Organization::hasFeature('ai_classification')` (only when a non-null driver is configured),
+  so a free/beta org never triggers a paid provider. Capped at 50, degrades to no signal on any
+  error/missing key/empty content/refusal. Tests use `Http::fake`. Claude defaults to
+  `claude-opus-4-8` (override via `ANTHROPIC_MODEL`).
 - `FinancialDataService` — extracts IBAN/SWIFT/account numbers and compares them to the org's
   `VendorBankAccount` baseline; a mismatch (+60) is the strongest BEC signal.
 

@@ -45,12 +45,21 @@ class RiskEngine
             $email['email_content'] ?? null
         );
 
-        // AI deep pass (behind the cheap rule-based content service). Null driver
-        // by default → no signal; resolved from config in AppServiceProvider.
-        $aiResult = app(ContentClassifier::class)->classify(
-            $email['subject'] ?? null,
-            $email['email_content'] ?? null
-        );
+        // AI deep pass (behind the cheap rule-based content service). Runs only
+        // when an AI driver is configured AND the tenant's plan entitles it —
+        // the gate that stops a paid provider firing for a non-entitled org.
+        $aiResult = ['score' => 0, 'findings' => []];
+
+        if (config('sendlock.ai.driver', 'null') !== 'null') {
+            $org = \App\Models\Organization::find($organizationId);
+
+            if ($org && $org->hasFeature('ai_classification')) {
+                $aiResult = app(ContentClassifier::class)->classify(
+                    $email['subject'] ?? null,
+                    $email['email_content'] ?? null
+                );
+            }
+        }
 
         $financialResult = FinancialDataService::analyze(
             $email['email_content'] ?? null,

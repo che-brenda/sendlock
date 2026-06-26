@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Ai\ClaudeContentClassifier;
 use App\Services\Ai\ContentClassifier;
 use App\Services\Ai\GeminiContentClassifier;
 use App\Services\Ai\NullContentClassifier;
@@ -36,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ContentClassifier::class, function () {
             return match (config('sendlock.ai.driver', 'null')) {
                 'gemini' => new GeminiContentClassifier,
+                'claude' => new ClaudeContentClassifier,
                 default => new NullContentClassifier,
             };
         });

@@ -127,6 +127,33 @@ return [
             'key' => env('GEMINI_API_KEY'),
             'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
         ],
+
+        'claude' => [
+            'key' => env('ANTHROPIC_API_KEY'),
+            'model' => env('ANTHROPIC_MODEL', 'claude-opus-4-8'),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Plans & feature entitlements
+    |--------------------------------------------------------------------------
+    |
+    | Maps an organization's `subscription_plan` (case-insensitive) to the
+    | features it may use. This is the gate that keeps PAID providers from firing
+    | for non-entitled tenants even when global credentials are set — a free/beta
+    | org never triggers a billable call. "*" grants everything. Unknown plans
+    | fall back to `default_plan`.
+    |
+    */
+
+    'default_plan' => env('SENDLOCK_DEFAULT_PLAN', 'free'),
+
+    'plans' => [
+        'free' => [],
+        'beta' => ['ai_classification'],
+        'pro' => ['ai_classification', 'sms_verification', 'whatsapp_verification'],
+        'enterprise' => ['*'],
     ],
 
 ];

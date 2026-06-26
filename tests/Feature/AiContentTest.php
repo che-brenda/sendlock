@@ -9,7 +9,13 @@ use App\Services\RiskEngine;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
-    $this->org = Organization::create(['organization_name' => 'Acme', 'type' => 'head', 'status' => true]);
+    // 'pro' plan entitles the org to ai_classification (see config/sendlock.php).
+    $this->org = Organization::create([
+        'organization_name' => 'Acme',
+        'type' => 'head',
+        'status' => true,
+        'subscription_plan' => 'pro',
+    ]);
 });
 
 function geminiJson(array $payload): array
