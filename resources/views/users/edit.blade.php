@@ -1,90 +1,97 @@
 <x-app-layout>
+    <x-slot name="header">
+        <div>
+            <h2 class="text-xl font-semibold text-slate-800 leading-tight">Edit User</h2>
+            <p class="text-sm text-slate-400">{{ $user->first_name }} {{ $user->last_name }} · {{ $user->worker_number ?? '—' }}</p>
+        </div>
+    </x-slot>
 
-<div class="py-6">
-<div class="max-w-4xl mx-auto">
+    @php
+        $field = 'mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500';
+        $label = 'block text-sm font-medium text-slate-700';
+        $currentRole = $user->getRoleNames()->first();
+        $isSuperAdminUser = $user->hasRole('Super Admin');
+    @endphp
 
-<div class="bg-white shadow rounded-lg p-6">
+    <div class="py-8">
+        <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+            <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
 
-<h2 class="text-2xl font-bold mb-6">
-Edit User
-</h2>
+                @if($errors->any())
+                <div class="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    <ul class="list-inside list-disc space-y-1">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+                </div>
+                @endif
 
-<form method="POST"
-      action="{{ route('users.update', $user->id) }}">
+                <form method="POST" action="{{ route('users.update', $user->id) }}" class="space-y-6">
+                    @csrf
+                    @method('PUT')
 
-@csrf
-@method('PUT')
+                    <div>
+                        <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Profile</p>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="{{ $label }}">First name</label>
+                                <input type="text" name="first_name" value="{{ old('first_name', $user->first_name) }}" required class="{{ $field }}">
+                            </div>
+                            <div>
+                                <label class="{{ $label }}">Last name</label>
+                                <input type="text" name="last_name" value="{{ old('last_name', $user->last_name) }}" required class="{{ $field }}">
+                            </div>
+                            <div>
+                                <label class="{{ $label }}">Job title</label>
+                                <input type="text" name="job_title" value="{{ old('job_title', $user->job_title) }}" class="{{ $field }}">
+                            </div>
+                            <div>
+                                <label class="{{ $label }}">Worker number</label>
+                                <input type="text" name="worker_number" value="{{ old('worker_number', $user->worker_number) }}" required placeholder="e.g. EMP-1042" class="{{ $field }}">
+                                <p class="mt-1 text-xs text-slate-400">Unique within your organization.</p>
+                            </div>
+                            <div>
+                                <label class="{{ $label }}">Department</label>
+                                <select name="department_id" class="{{ $field }}">
+                                    <option value="">Not assigned</option>
+                                    @foreach($departments as $department)
+                                        <option value="{{ $department->id }}" @selected(old('department_id', $user->department_id) == $department->id)>{{ $department->department_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
-<div class="mb-4">
-<label>First Name</label>
+                    <div>
+                        <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Contact &amp; access</p>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="{{ $label }}">Email</label>
+                                <input type="email" name="email" value="{{ old('email', $user->email) }}" required class="{{ $field }}">
+                            </div>
+                            <div>
+                                <label class="{{ $label }}">Phone</label>
+                                <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" class="{{ $field }}">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="{{ $label }}">Role</label>
+                                @if($isSuperAdminUser)
+                                    <input type="text" value="Super Admin" disabled class="{{ $field }} bg-slate-50 text-slate-400">
+                                    <p class="mt-1 text-xs text-slate-400">Super Admin role cannot be changed here.</p>
+                                @else
+                                    <select name="role" class="{{ $field }}">
+                                        @foreach($roles as $role)
+                                            <option value="{{ $role->name }}" @selected(old('role', $currentRole) === $role->name)>{{ $role->name }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
 
-<input
-type="text"
-name="first_name"
-value="{{ $user->first_name }}"
-class="w-full border rounded p-2">
-</div>
-
-<div class="mb-4">
-<label>Last Name</label>
-
-<input
-type="text"
-name="last_name"
-value="{{ $user->last_name }}"
-class="w-full border rounded p-2">
-</div>
-
-<div class="mb-4">
-<label>Email</label>
-
-<input
-type="email"
-name="email"
-value="{{ $user->email }}"
-class="w-full border rounded p-2">
-</div>
-
-<div class="mb-4">
-<label>Department</label>
-
-<select
-name="department_id"
-class="w-full border rounded p-2">
-
-@foreach($departments as $department)
-
-<option
-value="{{ $department->id }}"
-{{ $user->department_id == $department->id ? 'selected' : '' }}>
-
-{{ $department->department_name }}
-
-</option>
-
-@endforeach
-
-</select>
-
-</div>
-
-<button
-type="submit"
-style="
-background:#2563eb;
-color:white;
-padding:10px 16px;
-border-radius:6px;
-">
-
-Update User
-
-</button>
-
-</form>
-
-</div>
-</div>
-</div>
-
+                    <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
+                        <a href="{{ route('users.index') }}" class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</a>
+                        <button type="submit" class="rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white hover:bg-teal-700">Update User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </x-app-layout>

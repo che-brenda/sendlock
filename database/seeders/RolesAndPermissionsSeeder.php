@@ -41,6 +41,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'guard_name' => 'web'
         ]);
 
+        $headOrganizationAdmin = Role::firstOrCreate([
+            'name' => 'Head Organization Admin',
+            'guard_name' => 'web'
+        ]);
+
         $organizationAdmin = Role::firstOrCreate([
             'name' => 'Organization Admin',
             'guard_name' => 'web'
@@ -74,6 +79,19 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Super Admin gets everything
         $superAdmin->syncPermissions(Permission::all());
+
+        // Head Organization Admin: manages its own org and all sub-organizations
+        $headOrganizationAdmin->syncPermissions([
+            'manage organizations',
+            'manage users',
+            'manage vendors',
+            'manage domains',
+            'manage policies',
+            'view reports',
+            'view audit logs',
+            'view dashboard',
+            'manage approvals'
+        ]);
 
         // Organization Admin
         $organizationAdmin->syncPermissions([

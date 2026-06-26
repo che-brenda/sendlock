@@ -4,17 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use Illuminate\Http\Request;
+use App\Helpers\AuditLogger;
 
 class DepartmentController extends Controller
 {
     public function index()
     {
-        $departments = Department::where(
-    'organization_id',
-    auth()->user()->organization_id
-)
-->latest()
-->get();
+        $departments = Department::where('organization_id', auth()->user()->organization_id)
+            ->withCount('users')
+            ->latest()
+            ->get();
 
         return view('departments.index', compact('departments'));
     }
@@ -26,19 +25,19 @@ class DepartmentController extends Controller
 
     public function store(Request $request)
     {
-    
-   
-    
-        $request->validate([
-            'department_name' => 'required|max:255',
+        $validated = $request->validate([
+            'department_name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
         ]);
 
-        Department::create([
+        $department = Department::create([
             'organization_id' => auth()->user()->organization_id,
-            'department_name' => $request->department_name,
-            'description' => $request->description,
+            'department_name' => $validated['department_name'],
+            'description' => $validated['description'] ?? null,
             'status' => true,
         ]);
+
+        AuditLogger::log('CREATE', 'DEPARTMENT', $department->id, 'Created department ' . $department->department_name);
 
         return redirect()
             ->route('departments.index')
@@ -47,24 +46,37 @@ class DepartmentController extends Controller
 
     public function show(Department $department)
     {
+        $department = $this->scoped($department);
+        $department->loadCount('users');
+        $department->load('users');
+
         return view('departments.show', compact('department'));
     }
 
     public function edit(Department $department)
     {
+        $department = $this->scoped($department);
+
         return view('departments.edit', compact('department'));
     }
 
     public function update(Request $request, Department $department)
     {
-        $request->validate([
-            'department_name' => 'required|max:255',
+        $department = $this->scoped($department);
+
+        $validated = $request->validate([
+            'department_name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'status' => 'nullable|boolean',
         ]);
 
         $department->update([
-            'department_name' => $request->department_name,
-            'description' => $request->description,
+            'department_name' => $validated['department_name'],
+            'description' => $validated['description'] ?? null,
+            'status' => $request->boolean('status'),
         ]);
+
+        AuditLogger::log('UPDATE', 'DEPARTMENT', $department->id, 'Updated department ' . $department->department_name);
 
         return redirect()
             ->route('departments.index')
@@ -73,10 +85,23 @@ class DepartmentController extends Controller
 
     public function destroy(Department $department)
     {
+        $department = $this->scoped($department);
+
+        AuditLogger::log('DELETE', 'DEPARTMENT', $department->id, 'Deleted department ' . $department->department_name);
+
         $department->delete();
 
         return redirect()
             ->route('departments.index')
             ->with('success', 'Department deleted successfully.');
+    }
+
+    /**
+     * Resolve the department within the current tenant, 404/403-ing otherwise.
+     */
+    private function scoped(Department $department): Department
+    {
+        return Department::where('organization_id', auth()->user()->organization_id)
+            ->findOrFail($department->id);
     }
 }

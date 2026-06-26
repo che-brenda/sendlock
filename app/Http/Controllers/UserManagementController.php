@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\Rule;
 use App\Helpers\AuditLogger;
 
 class UserManagementController extends Controller
@@ -42,10 +43,21 @@ class UserManagementController extends Controller
 
     public function store(Request $request)
     {
+        $organizationId = auth()->user()->organization_id;
+
         $request->validate([
             'first_name' => 'required|max:255',
             'last_name' => 'required|max:255',
+            'job_title' => 'nullable|string|max:255',
+            // Worker number is entered manually and is unique within the organization.
+            'worker_number' => [
+                'required', 'string', 'max:50',
+                Rule::unique('users', 'worker_number')->where(
+                    fn ($query) => $query->where('organization_id', $organizationId)
+                ),
+            ],
             'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:50',
             'department_id' => 'nullable|exists:departments,id',
             'role' => 'required',
             'password' => [
@@ -66,9 +78,12 @@ class UserManagementController extends Controller
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'name' => $request->first_name . ' ' . $request->last_name,
+            'job_title' => $request->job_title,
             'email' => $request->email,
+            'phone' => $request->phone,
             'password' => Hash::make($request->password),
-            'organization_id' => auth()->user()->organization_id,
+            'organization_id' => $organizationId,
+            'worker_number' => $request->worker_number,
             'department_id' => $request->department_id,
             'status' => true,
         ]);
@@ -140,17 +155,43 @@ class UserManagementController extends Controller
         $request->validate([
             'first_name' => 'required|max:255',
             'last_name' => 'required|max:255',
+            'job_title' => 'nullable|string|max:255',
+            'worker_number' => [
+                'required', 'string', 'max:50',
+                Rule::unique('users', 'worker_number')
+                    ->where(fn ($query) => $query->where('organization_id', $user->organization_id))
+                    ->ignore($user->id),
+            ],
             'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:50',
             'department_id' => 'nullable|exists:departments,id',
+            'role' => 'nullable|exists:roles,name',
         ]);
+
+        // Guard the privileged role: only a Super Admin may grant Super Admin,
+        // and an existing Super Admin's role must not be downgraded here.
+        if (
+            $request->filled('role')
+            && $request->role === 'Super Admin'
+            && ! auth()->user()->hasRole('Super Admin')
+        ) {
+            abort(403, 'Unauthorized role assignment.');
+        }
 
         $user->update([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'name' => $request->first_name . ' ' . $request->last_name,
+            'job_title' => $request->job_title,
+            'worker_number' => $request->worker_number,
             'email' => $request->email,
+            'phone' => $request->phone,
             'department_id' => $request->department_id,
         ]);
+
+        if ($request->filled('role') && ! $user->hasRole('Super Admin')) {
+            $user->syncRoles([$request->role]);
+        }
 
         AuditLogger::log(
             'UPDATE',

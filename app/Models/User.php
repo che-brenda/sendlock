@@ -14,9 +14,12 @@ use Spatie\Permission\Traits\HasRoles;
 'first_name',
     'last_name',
     'name',
+    'job_title',
     'email',
+    'phone',
     'password',
     'organization_id',
+    'worker_number',
     'department_id',
     'status',
     'last_login'
@@ -44,7 +47,30 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login' => 'datetime',
+            'status' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Role helpers (single source of truth for access-level checks)
+    |--------------------------------------------------------------------------
+    */
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('Super Admin');
+    }
+
+    public function isHeadOrgAdmin(): bool
+    {
+        return $this->hasRole('Head Organization Admin');
+    }
+
+    public function isOrgAdmin(): bool
+    {
+        return $this->hasRole('Organization Admin');
     }
 }

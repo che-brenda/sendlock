@@ -50,7 +50,8 @@ $organization = Organization::create([
     'status' => true,
 ]);
 
-// Create User
+// Create the first admin. Worker number is assigned manually later from
+// User Management, so it starts empty for the founding administrator.
 $user = User::create([
     'first_name' => $request->first_name,
     'last_name' => $request->last_name,

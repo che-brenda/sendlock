@@ -48,3 +48,18 @@ function something()
 {
     // ..
 }
+
+/**
+ * Create a user belonging to the given organization and assign a role.
+ */
+function makeUser(\App\Models\Organization $org, string $role): \App\Models\User
+{
+    $user = \App\Models\User::factory()->create([
+        'organization_id' => $org->id,
+        'status' => true,
+    ]);
+
+    $user->assignRole($role);
+
+    return $user;
+}

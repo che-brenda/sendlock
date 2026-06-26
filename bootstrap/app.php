@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
     $middleware->alias([
     'superadmin' => \App\Http\Middleware\EnsureSuperAdmin::class,
+    'headorg.admin' => \App\Http\Middleware\EnsureHeadOrgAdmin::class,
+    'org.admin' => \App\Http\Middleware\EnsureOrgAdmin::class,
 ]);
         //
     })
