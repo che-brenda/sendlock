@@ -9,12 +9,6 @@
     <div class="py-8" x-data="{ tab: 'trusted' }">
         <div class="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
 
-            @if(session('success'))
-            <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                {{ session('success') }}
-            </div>
-            @endif
-
             @if($errors->any())
             <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 <ul class="list-inside list-disc space-y-1">

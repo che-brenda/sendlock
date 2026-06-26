@@ -22,6 +22,9 @@
                  @click="sidebarOpen = false"
                  class="fixed inset-0 z-30 bg-slate-900/50 lg:hidden"></div>
 
+            <!-- Global flash notifications (success / error / info pop-ups) -->
+            <x-flash />
+
             <!-- Sidebar -->
             @include('layouts.navigation')
 

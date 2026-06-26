@@ -108,7 +108,12 @@ reference implementation. When adding any new tenant-owned resource, replicate t
 
 ### Navigation & UI shell
 The layout is a role-aware left sidebar (`layouts/navigation.blade.php`) + top bar
-(`layouts/app.blade.php`), styled after abnormal.com (slate sidebar, violet accent). Menu
+(`layouts/app.blade.php`), styled after abnormal.com (slate sidebar, violet accent).
+**Flash notifications are global**: `<x-flash />` (in both `layouts/app` and `layouts/guest`)
+renders `session('success'|'error'|'warning'|'info')`, Breeze `session('status')`, and validation
+errors as dismissible auto-fading toasts (top-right, Alpine). So any controller `->with('success', …)`
+/ `->withErrors(…)` automatically pops a toast — **don't add per-page success/error banners**
+(they'd double up); in-form field-level validation errors still render inline on create/edit forms. Menu
 sections render conditionally on the role helpers above. Use the `<x-sidebar-link>` component
 (takes `:active` and an `:icon` SVG-path string). Not-yet-built menu items route to named
 **placeholder** routes (defined in `routes/web.php`) that render `placeholder.blade.php` — so

@@ -113,6 +113,18 @@
             </div>
             @endif
 
+            <!-- Sub-organization empty state (head org admin, none created yet) -->
+            @if(($canDrillDown ?? false) && optional($currentOrg ?? null)->isHead() && ($subOrganizations ?? collect())->isEmpty())
+            <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center shadow-sm">
+                <p class="text-base font-semibold text-slate-700">No sub-organizations yet</p>
+                <p class="mx-auto mt-1 max-w-md text-sm text-slate-400">Add branches, subsidiaries, or teams that run on their own organization — you'll see everything happening beneath you, right here.</p>
+                <a href="{{ route('sub-organizations.create') }}" class="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    Create sub-organization
+                </a>
+            </div>
+            @endif
+
             <!-- Organizations & sub-organizations (Super Admin) -->
             @if(($headOrganizations ?? collect())->isNotEmpty())
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
