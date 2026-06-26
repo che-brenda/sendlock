@@ -61,7 +61,7 @@ class DashboardController extends Controller
             'subOrganizations' => $subOrganizations,
             'headOrganizations' => collect(),
             'aggregatesSubOrgs' => $subOrganizations->isNotEmpty(),
-            'canDrillDown' => $user->isHeadOrgAdmin() || $user->isSuperAdmin(),
+            'canDrillDown' => $user->canManageSubOrganizations(),
         ]);
     }
 }

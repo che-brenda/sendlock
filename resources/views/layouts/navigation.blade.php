@@ -5,6 +5,7 @@
     $isHead      = $user->isHeadOrgAdmin();
     $isOrgAdmin  = $user->isOrgAdmin();
     $isAdminLevel = $isSuper || $isHead || $isOrgAdmin;
+    $canManageSubOrgs = $user->canManageSubOrganizations();
     $canApprove   = $isAdminLevel || $user->hasRole('Manager');
     $canAudit     = $isAdminLevel || $user->hasAnyRole(['Security Officer', 'Auditor']);
 
@@ -106,7 +107,7 @@
         <!-- Administration -->
         <div class="space-y-1">
             <p class="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">Administration</p>
-            @if($isHead || $isSuper)
+            @if($canManageSubOrgs)
             <x-sidebar-link :href="route('sub-organizations.index')" :active="request()->routeIs('sub-organizations.*')" :icon="$icon['building']">
                 Sub-Organizations
             </x-sidebar-link>

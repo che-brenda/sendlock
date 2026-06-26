@@ -92,6 +92,38 @@ test('a sub-organization admin sees no sub-organization section', function () {
         ->assertDontSee('View activity');
 });
 
+test('an organization admin of a head org gets sub-organization powers', function () {
+    $admin = makeUser($this->head, 'Organization Admin');   // NOT a Head Organization Admin
+
+    expect($admin->canManageSubOrganizations())->toBeTrue();
+
+    // Can reach the management index and drill into a sub-org.
+    $this->actingAs($admin)->get(route('sub-organizations.index'))->assertOk();
+    $this->actingAs($admin)
+        ->get(route('sub-organizations.show', $this->sub))
+        ->assertOk()
+        ->assertSee('Acme Europe');
+
+    // And the dashboard shows the section with drill-down.
+    $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('View activity');
+});
+
+test('a sub-org organization admin has no sub-organization powers', function () {
+    $subAdmin = makeUser($this->sub, 'Organization Admin');   // admin of a SUB org
+
+    expect($subAdmin->canManageSubOrganizations())->toBeFalse();
+
+    $this->actingAs($subAdmin)->get(route('sub-organizations.index'))->assertForbidden();
+});
+
+test('a non-admin of a head org has no sub-organization powers', function () {
+    $employee = makeUser($this->head, 'Employee');
+
+    expect($employee->canManageSubOrganizations())->toBeFalse();
+
+    $this->actingAs($employee)->get(route('sub-organizations.index'))->assertForbidden();
+});
+
 test('super admin dashboard lists organizations and their sub-org counts', function () {
     $super = makeUser($this->head, 'Super Admin');
 

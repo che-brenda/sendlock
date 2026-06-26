@@ -73,4 +73,21 @@ class User extends Authenticatable
     {
         return $this->hasRole('Organization Admin');
     }
+
+    /**
+     * Sub-organization powers: a Super Admin, or any admin (Organization Admin /
+     * Head Organization Admin) whose organization is a **head** organization.
+     * Every top-level org admin can create, manage, and view the sub-orgs beneath
+     * them — no separate role required. Sub-org admins (org type 'sub') don't
+     * qualify, keeping the hierarchy two levels deep.
+     */
+    public function canManageSubOrganizations(): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        return ($this->isOrgAdmin() || $this->isHeadOrgAdmin())
+            && (bool) $this->organization?->isHead();
+    }
 }

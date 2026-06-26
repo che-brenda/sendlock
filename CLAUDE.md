@@ -56,7 +56,8 @@ npm run dev / npm run build  # vite assets
 `parent_id = null`) owns **sub** organizations (`type = 'sub'`). `Organization` exposes
 `parent()`, `children()`, `isHead()`, `isSub()`, and `descendantIds()` (self + children, for
 scoping a head admin across its tree). New sign-ups create a head org; `SubOrganizationController`
-(behind `headorg.admin`) lets a head admin manage its sub-orgs, scoped to its own children. The
+(behind `headorg.admin`) lets any admin of a head org (Organization Admin or Head Organization
+Admin, via `User::canManageSubOrganizations()`) manage its sub-orgs, scoped to its own children. The
 **dashboard** (`DashboardController`) aggregates totals + recent activity across `descendantIds()`,
 so a head org sees everything beneath it; it renders a **Sub-Organizations** section (each sub-org's
 user/dept/scan counts), and Head Org Admins get a **read-only drill-down** (`sub-organizations.show`)
@@ -95,7 +96,8 @@ reference implementation. When adding any new tenant-owned resource, replicate t
   branch on `auth()->user()->hasRole('Super Admin')`. `User` exposes `isSuperAdmin()`,
   `isHeadOrgAdmin()`, `isOrgAdmin()` — prefer these helpers over raw `hasRole()` strings.
 - Middleware aliases (registered in `bootstrap/app.php`): `superadmin` (`EnsureSuperAdmin`),
-  `headorg.admin` (`EnsureHeadOrgAdmin` — super + head admin), `org.admin` (`EnsureOrgAdmin`
+  `headorg.admin` (`EnsureHeadOrgAdmin` — **sub-org powers**: super, or any Org/Head-Org Admin
+  whose org is a head org — see `User::canManageSubOrganizations()`), `org.admin` (`EnsureOrgAdmin`
   — super + head + org admin).
 - **Plans & feature entitlements (the paid-feature gate):** `organizations.subscription_plan`
   (default `Free`) maps to a feature list via `config('sendlock.plans')`; `Organization::hasFeature($f)`
