@@ -203,7 +203,10 @@ a `VerificationChannel` per channel type: SMS/WhatsApp use the configured driver
 default `log` driver use the stub (codes are 6-digit, TTL from config). The `twilio` driver
 (`TwilioVerificationChannel`) sends real SMS/WhatsApp via Twilio's REST API (Laravel `Http`, no
 SDK) and **degrades to the log stub if credentials are missing**, so nothing is sent/billed
-until `SENDLOCK_VERIFICATION_DRIVER=twilio` + `TWILIO_*` are set in `.env`. `ApprovalController`
+until `SENDLOCK_VERIFICATION_DRIVER=twilio` + `TWILIO_*` are set in `.env`. `VerificationService`
+also **plan-gates the paid channel**: SMS/WhatsApp only use the Twilio channel when the org's plan
+entitles `sms_verification`/`whatsapp_verification` (see the plan gate), else it falls back to the
+log stub — so a free/beta org never triggers a billable send. `ApprovalController`
 (`/approvals`) is role-gated to Manager and above. All three controllers re-check
 `organization_id` on every bound model. Status badges render via `<x-status-badge :status="…" />`.
 Tests fake the HTTP client (`Http::fake`) so the Twilio path is covered without real calls.

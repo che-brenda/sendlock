@@ -7,7 +7,14 @@ use App\Services\Verification\VerificationService;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
-    $this->org = Organization::create(['organization_name' => 'Acme', 'type' => 'head', 'status' => true]);
+    // 'pro' plan entitles the org to sms_verification / whatsapp_verification —
+    // a prerequisite for the paid Twilio channel to fire (see the plan gate).
+    $this->org = Organization::create([
+        'organization_name' => 'Acme',
+        'type' => 'head',
+        'status' => true,
+        'subscription_plan' => 'pro',
+    ]);
     $user = User::factory()->create(['organization_id' => $this->org->id, 'status' => true]);
 
     $this->request = (new ApprovalWorkflow)->createFromEvaluation(
@@ -66,6 +73,31 @@ test('the default log driver never calls twilio', function () {
     Http::fake();
 
     (new VerificationService)->issue($this->request, 'sms', '+15557654321');
+
+    Http::assertNothingSent();
+});
+
+test('an unentitled (free-plan) org never triggers a real twilio send', function () {
+    config()->set('sendlock.verification.driver', 'twilio');
+    config()->set('sendlock.verification.twilio.sid', 'AC_test');
+    config()->set('sendlock.verification.twilio.token', 'secret');
+    config()->set('sendlock.verification.twilio.sms_from', '+15550001111');
+
+    Http::fake(['api.twilio.com/*' => Http::response(['sid' => 'SM_test'], 201)]);
+
+    $freeOrg = Organization::create([
+        'organization_name' => 'Free Co', 'type' => 'head', 'status' => true, 'subscription_plan' => 'free',
+    ]);
+    $user = User::factory()->create(['organization_id' => $freeOrg->id, 'status' => true]);
+    $req = (new ApprovalWorkflow)->createFromEvaluation(
+        ['risk_score' => 75, 'risk_level' => 'HIGH', 'decision' => 'RECIPIENT_VERIFY'],
+        ['recipient_email' => 'vendor@partner.com', 'subject' => 'Invoice', 'email_content' => 'Body'],
+        $freeOrg->id,
+        $user->id
+    );
+
+    // Plan gate: the free org falls back to the log stub — no billable Twilio call.
+    (new VerificationService)->issue($req, 'sms', '+15557654321');
 
     Http::assertNothingSent();
 });

@@ -156,10 +156,13 @@ raw HTTP, anthropic-version 2023-06-01, strict-JSON via `output_config.format`),
 Pure driver swap, no `RiskEngine` change; degrades on error/refusal. Covered by
 `tests/Feature/ClaudeContentTest.php` (`Http::fake`, header/schema assertion, refusal degrade, gate).
 
-**T3.2 — Twilio SMS + WhatsApp (already built)** → just enablement + docs. `TwilioVerificationChannel`
-exists and **degrades to the log stub without creds**. Needs: `SENDLOCK_VERIFICATION_DRIVER=twilio`,
-`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`/WhatsApp sender. Tests already fake the HTTP
-client. Action: verify WhatsApp sender config + add a production-readiness checklist.
+**T3.2 — Twilio SMS + WhatsApp** ✅ **SHIPPED (plan-gated)** → the channel was already built;
+this slice **plan-gates the paid path**: `VerificationService` only uses `TwilioVerificationChannel`
+for sms/whatsapp when the org's plan entitles `sms_verification`/`whatsapp_verification`, else it
+falls back to the log stub — a free/beta org never triggers a billable send even with Twilio
+configured. `TwilioVerificationTest` orgs moved to the `pro` plan + a new gate test
+(free-plan org → no Twilio call). To enable in prod: `SENDLOCK_VERIFICATION_DRIVER=twilio` +
+`TWILIO_*` and put paying tenants on `pro`/`enterprise`.
 
 **T3.3 — Commercial threat feeds** → additional paid `ThreatFeed` drivers behind the T2.1 interface +
 cache. Needs: vendor API keys/contracts; per-plan gating so only paying orgs trigger paid lookups.

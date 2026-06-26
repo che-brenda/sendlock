@@ -3,6 +3,7 @@
 namespace App\Services\Verification;
 
 use App\Models\ApprovalRequest;
+use App\Models\Organization;
 use App\Models\RecipientVerification;
 use Illuminate\Support\Carbon;
 
@@ -41,7 +42,7 @@ class VerificationService
 
         $to = $channel === 'email' ? $request->recipient_email : ($phone ?? $request->recipient_email);
 
-        $this->resolveChannel($channel)->send(
+        $this->resolveChannel($channel, $request->organization_id)->send(
             $to,
             $code,
             'Verify recipient for "'.($request->subject ?: 'outbound email').'"'
@@ -85,17 +86,32 @@ class VerificationService
 
     /**
      * Pick the transport for a given channel type. SMS/WhatsApp go through the
-     * configured driver (Twilio); email and the default 'log' driver use the
-     * log stub. Unconfigured Twilio degrades to the stub inside the channel.
+     * configured driver (Twilio) **only when the tenant's plan entitles the
+     * paid channel** — an unentitled org falls back to the log stub, so a free/
+     * beta org never triggers a billable send even if Twilio is configured.
+     * Email and the default 'log' driver always use the log stub. Unconfigured
+     * Twilio also degrades to the stub inside the channel.
      */
-    private function resolveChannel(string $channel): VerificationChannel
+    private function resolveChannel(string $channel, int $organizationId): VerificationChannel
     {
         $driver = config('sendlock.verification.driver', 'log');
 
-        if ($driver === 'twilio' && in_array($channel, ['sms', 'whatsapp'], true)) {
+        if ($driver === 'twilio'
+            && in_array($channel, ['sms', 'whatsapp'], true)
+            && $this->entitled($organizationId, $channel)) {
             return new TwilioVerificationChannel($channel);
         }
 
         return new LogVerificationChannel;
+    }
+
+    /**
+     * Whether the org's plan includes the paid verification channel.
+     */
+    private function entitled(int $organizationId, string $channel): bool
+    {
+        $feature = $channel === 'whatsapp' ? 'whatsapp_verification' : 'sms_verification';
+
+        return (bool) Organization::find($organizationId)?->hasFeature($feature);
     }
 }
