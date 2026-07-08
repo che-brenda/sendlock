@@ -55,8 +55,8 @@
                             <tr class="hover:bg-slate-50">
                                 <td class="px-6 py-3">
                                     <div class="flex items-center gap-3">
-                                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-teal-600 text-xs font-semibold text-white">{{ strtoupper(substr($member->first_name, 0, 1) . substr($member->last_name, 0, 1)) }}</span>
-                                        <span class="font-medium text-slate-800">{{ $member->first_name }} {{ $member->last_name }}</span>
+                                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-teal-600 text-xs font-semibold text-white">{{ $member->initials }}</span>
+                                        <span class="font-medium text-slate-800">{{ $member->display_name }}</span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-3 text-slate-600">{{ $member->job_title ?? '—' }}</td>

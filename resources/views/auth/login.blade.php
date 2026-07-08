@@ -17,7 +17,7 @@
 
         <!-- Email Address -->
         <div>
-            <label for="email" class="{{ $label }}">Work email</label>
+            <label for="email" class="{{ $label }}">Email</label>
             <input id="email" name="email" type="email" value="{{ old('email') }}"
                    required autofocus autocomplete="username" class="{{ $field }}">
             <x-input-error :messages="$errors->get('email')" class="mt-2" />

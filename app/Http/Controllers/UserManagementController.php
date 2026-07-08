@@ -7,8 +7,8 @@ use App\Models\Department;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules;
 use Spatie\Permission\Models\Role;
 
 class UserManagementController extends Controller
@@ -60,11 +60,6 @@ class UserManagementController extends Controller
             'phone' => 'nullable|string|max:50',
             'department_id' => 'nullable|exists:departments,id',
             'role' => 'required',
-            'password' => [
-                'required',
-                'confirmed',
-                Rules\Password::defaults(),
-            ],
         ]);
 
         if (
@@ -74,6 +69,12 @@ class UserManagementController extends Controller
             abort(403, 'Unauthorized role assignment.');
         }
 
+        // The admin no longer sets a password. The system issues a strong
+        // temporary one that the new user must replace on first sign-in; it is
+        // kept (encrypted) on the user record so the admin can read it off their
+        // dashboard until it is used.
+        $temporaryPassword = Str::password(14);
+
         $user = User::create([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -81,11 +82,13 @@ class UserManagementController extends Controller
             'job_title' => $request->job_title,
             'email' => $request->email,
             'phone' => $request->phone,
-            'password' => Hash::make($request->password),
+            'password' => Hash::make($temporaryPassword),
             'organization_id' => $organizationId,
             'worker_number' => $request->worker_number,
             'department_id' => $request->department_id,
             'status' => true,
+            'must_change_password' => true,
+            'temporary_password' => $temporaryPassword,
         ]);
 
         $user->assignRole($request->role);
@@ -99,7 +102,7 @@ class UserManagementController extends Controller
 
         return redirect()
             ->route('users.index')
-            ->with('success', 'User created successfully.');
+            ->with('success', 'User created. Share their temporary password (shown below) — they must change it on first sign-in.');
     }
 
     public function show(User $user)

@@ -73,24 +73,37 @@
                 <input type="hidden" name="recipient_email" value="{{ $email['recipient_email'] ?? '' }}">
                 <input type="hidden" name="subject" value="{{ $email['subject'] ?? '' }}">
                 <input type="hidden" name="email_content" value="{{ $email['email_content'] ?? '' }}">
-                <button type="submit"
-                        class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                    Request manager authorization
-                </button>
+                <x-confirm-submit label="Request manager authorization"
+                                  message="Send this to a manager for authorization?"
+                                  confirm="Yes"
+                                  class="border border-slate-300 bg-white text-slate-700 hover:bg-slate-50" />
             </form>
 
             @if($isSend)
-            <!-- Override: send anyway (re-submits with acknowledgement) -->
+            {{-- Proceed-to-review options (navigate, no send) --}}
+            @foreach([['intent' => 'analysis', 'label' => 'View risk analysis', 'class' => 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'], ['intent' => 'verify', 'label' => 'Verify recipient', 'class' => 'bg-teal-600 text-white hover:bg-teal-700']] as $opt)
             <form method="POST" action="{{ route('protected-email.store') }}">
                 @csrf
                 <input type="hidden" name="acknowledged" value="1">
                 <input type="hidden" name="recipient_email" value="{{ $email['recipient_email'] ?? '' }}">
                 <input type="hidden" name="subject" value="{{ $email['subject'] ?? '' }}">
                 <input type="hidden" name="email_content" value="{{ $email['email_content'] ?? '' }}">
-                <button type="submit"
-                        class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700">
-                    Send anyway
-                </button>
+                <input type="hidden" name="intent" value="{{ $opt['intent'] }}">
+                <button type="submit" class="rounded-lg px-4 py-2 text-sm font-medium {{ $opt['class'] }}">{{ $opt['label'] }}</button>
+            </form>
+            @endforeach
+
+            {{-- Send anyway — asks the user to confirm before proceeding --}}
+            <form method="POST" action="{{ route('protected-email.store') }}">
+                @csrf
+                <input type="hidden" name="acknowledged" value="1">
+                <input type="hidden" name="recipient_email" value="{{ $email['recipient_email'] ?? '' }}">
+                <input type="hidden" name="subject" value="{{ $email['subject'] ?? '' }}">
+                <input type="hidden" name="email_content" value="{{ $email['email_content'] ?? '' }}">
+                <x-confirm-submit label="Send anyway"
+                                  message="Are you sure you want to send an email to this address?"
+                                  confirm="Yes, send"
+                                  class="bg-amber-600 text-white hover:bg-amber-700" />
             </form>
             @endif
         </div>

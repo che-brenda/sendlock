@@ -7,6 +7,7 @@ use App\Models\BlockedDomain;
 use App\Models\TrustedDomain;
 use App\Models\VendorBankAccount;
 use App\Models\VerifiedRecipient;
+use App\Services\PublicEmailProviders;
 use Illuminate\Http\Request;
 
 /**
@@ -53,7 +54,32 @@ class TrustCenterController extends Controller
             'vendor_name' => 'nullable|string|max:255',
         ]);
 
+        $raw = strtolower(trim($validated['domain']));
+
+        // A full email address is ADDRESS-level trust, not domain-level. Trusting
+        // the whole domain (e.g. gmail.com) would trust every address on it — so a
+        // single-letter variant would read as trusted. Store it as a verified
+        // contact instead, so EmailIntelligenceService catches look-alikes.
+        if (str_contains($raw, '@') && filter_var($raw, FILTER_VALIDATE_EMAIL)) {
+            VerifiedRecipient::firstOrCreate(
+                ['organization_id' => $organizationId, 'email' => $raw],
+                ['name' => $validated['vendor_name'] ?? null, 'verified' => true, 'verified_at' => now()],
+            );
+
+            AuditLogger::log('CREATE', 'VERIFIED_RECIPIENT', null, 'Verified contact '.$raw.' (entered in trusted-domain field)');
+
+            return back()->with('info', 'That is a full email address, so it was trusted as a specific verified contact — not the entire domain. Any look-alike of it will now be flagged.');
+        }
+
         $domain = $this->normalizeDomain($validated['domain']);
+
+        // A public email provider cannot be trusted as a whole domain — it would
+        // trust every address on it. Direct the user to trust the specific contact.
+        if (PublicEmailProviders::is($domain)) {
+            return back()->withErrors([
+                'domain' => $domain.' is a public email provider — trusting the whole domain would trust everyone on it. Add the specific address (e.g. name@'.$domain.') under Verified Recipients instead.',
+            ]);
+        }
 
         $request->merge(['domain' => $domain]);
         $request->validate([

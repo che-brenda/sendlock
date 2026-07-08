@@ -71,6 +71,39 @@
             </div>
         </section>
 
+        <!-- Live risk breakdown -->
+        <section class="relative overflow-hidden bg-slate-950 py-20">
+            <div class="absolute -left-32 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-indigo-500/20 blur-3xl"></div>
+            <div class="absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-teal-500/20 blur-3xl"></div>
+            <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+                <div>
+                    <span class="inline-flex items-center gap-2 rounded-full border border-teal-400/30 bg-teal-400/10 px-3 py-1 text-xs font-semibold text-teal-300">
+                        <span class="h-1.5 w-1.5 rounded-full bg-teal-400"></span>
+                        Live risk engine
+                    </span>
+                    <h2 class="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                        See <span class="text-teal-400">why</span> sends get flagged — as it happens.
+                    </h2>
+                    <p class="mt-4 max-w-xl text-lg leading-relaxed text-slate-300">
+                        Every outbound message is scored across eight signals. This is the live breakdown of the
+                        reasons SendLock stops fraud before an email ever leaves your organization.
+                    </p>
+                    <ul class="mt-6 space-y-3">
+                        @foreach(['Lookalike & typosquat domains', 'Newly-registered sender domains', 'No prior communication history', 'Low domain reputation & impersonation'] as $point)
+                        <li class="flex items-center gap-3 text-slate-300">
+                            <svg class="h-5 w-5 shrink-0 text-teal-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                            {{ $point }}
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
+
+                <div class="flex justify-center lg:justify-end">
+                    <x-risk-chart :size="300" title="Top Risk Reasons" class="w-full max-w-md shadow-2xl" />
+                </div>
+            </div>
+        </section>
+
         <!-- Trust bar -->
         <section class="border-b border-slate-200 bg-white">
             <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">

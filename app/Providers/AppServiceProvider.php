@@ -6,6 +6,12 @@ use App\Services\Ai\ClaudeContentClassifier;
 use App\Services\Ai\ContentClassifier;
 use App\Services\Ai\GeminiContentClassifier;
 use App\Services\Ai\NullContentClassifier;
+use App\Services\Dns\DnsResolver;
+use App\Services\Dns\LiveDnsResolver;
+use App\Services\Dns\NullDnsResolver;
+use App\Services\DomainAge\DomainAgeResolver;
+use App\Services\DomainAge\NullDomainAgeResolver;
+use App\Services\DomainAge\RdapDomainAgeResolver;
 use App\Services\Ocr\NullOcrDriver;
 use App\Services\Ocr\OcrDriver;
 use App\Services\Ocr\TesseractOcrDriver;
@@ -39,6 +45,24 @@ class AppServiceProvider extends ServiceProvider
                 'gemini' => new GeminiContentClassifier,
                 'claude' => new ClaudeContentClassifier,
                 default => new NullContentClassifier,
+            };
+        });
+
+        // MX/DNS resolver. Defaults to live (built-in PHP DNS, no key); tests pin
+        // it to null so the suite never touches the network.
+        $this->app->bind(DnsResolver::class, function () {
+            return match (config('sendlock.dns.driver', 'live')) {
+                'live' => new LiveDnsResolver,
+                default => new NullDnsResolver,
+            };
+        });
+
+        // Domain-age resolver. Defaults to null (unknown) — inert until an RDAP
+        // provider is enabled via SENDLOCK_DOMAIN_AGE_DRIVER=rdap.
+        $this->app->bind(DomainAgeResolver::class, function () {
+            return match (config('sendlock.domain_age.driver', 'null')) {
+                'rdap' => new RdapDomainAgeResolver,
+                default => new NullDomainAgeResolver,
             };
         });
     }

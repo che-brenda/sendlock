@@ -74,10 +74,18 @@ class DomainIntelligenceService
         // warned on. Each entry: ['type' => ..., 'reason' => ..., 'resembles' => ?].
         $flags = [];
 
-        $isTrusted = TrustedDomain::where('organization_id', $organizationId)
-            ->where('domain', $domain)
-            ->where('active', true)
-            ->exists();
+        // A public email provider (gmail/outlook/…) is recognized as a valid
+        // provider, but recognition is NOT domain-level trust — millions share it,
+        // so only a specific verified address at it can be trusted (handled by
+        // EmailIntelligenceService). The engine therefore does not grant this
+        // domain trust; it proceeds to score it and check the exact address.
+        $isPublicProvider = PublicEmailProviders::is($domain);
+
+        $isTrusted = ! $isPublicProvider
+            && TrustedDomain::where('organization_id', $organizationId)
+                ->where('domain', $domain)
+                ->where('active', true)
+                ->exists();
 
         if ($isTrusted) {
             // A trusted domain is taken at face value — no impersonation heuristics
@@ -96,7 +104,9 @@ class DomainIntelligenceService
         // An unrecognized counterparty is high risk on its own: +70 lands a bare
         // untrusted domain at the HIGH band before any other signal.
         $score += 70;
-        $reason = 'Domain not found in Trust Center';
+        $reason = $isPublicProvider
+            ? 'Public email provider ('.$domain.') — the individual address must be verified, the domain is not trusted'
+            : 'Domain not found in Trust Center';
         $findings[] = $reason;
         $flags[] = ['type' => 'untrusted', 'reason' => $reason, 'resembles' => null];
 

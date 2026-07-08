@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\RiskReasonStats;
 
 /**
  * Security dashboard. A Super Admin sees platform-wide totals plus every head
@@ -22,13 +23,17 @@ class DashboardController extends Controller
         $user = auth()->user();
 
         if ($user->isSuperAdmin()) {
+            $risk = RiskReasonStats::forOrganizations(Organization::query()->pluck('id')->all());
+
             return view('dashboard', [
                 'organizations' => Organization::count(),
                 'users' => User::count(),
                 'departments' => Department::count(),
                 'activeUsers' => User::where('status', true)->count(),
                 'inactiveUsers' => User::where('status', false)->count(),
-                'recentLogs' => AuditLog::latest()->take(10)->get(),
+                'recentLogs' => AuditLog::visibleTo($user)->latest()->take(10)->get(),
+                'riskReasons' => $risk['segments'],
+                'riskTotal' => $risk['total'],
                 'subOrganizations' => collect(),
                 'headOrganizations' => Organization::where('type', 'head')
                     ->withCount('children')
@@ -53,13 +58,17 @@ class DashboardController extends Controller
                 ->get()
             : collect();
 
+        $risk = RiskReasonStats::forOrganizations($ids);
+
         return view('dashboard', [
             'organizations' => count($ids),
             'users' => User::whereIn('organization_id', $ids)->count(),
             'departments' => Department::whereIn('organization_id', $ids)->count(),
             'activeUsers' => User::whereIn('organization_id', $ids)->where('status', true)->count(),
             'inactiveUsers' => User::whereIn('organization_id', $ids)->where('status', false)->count(),
-            'recentLogs' => AuditLog::whereIn('organization_id', $ids)->latest()->take(10)->get(),
+            'recentLogs' => AuditLog::visibleTo($user)->latest()->take(10)->get(),
+            'riskReasons' => $risk['segments'],
+            'riskTotal' => $risk['total'],
             'subOrganizations' => $subOrganizations,
             'headOrganizations' => collect(),
             'aggregatesSubOrgs' => $subOrganizations->isNotEmpty(),

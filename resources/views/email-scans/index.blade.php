@@ -165,9 +165,11 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($recentScans as $scan)
-                            <tr class="hover:bg-slate-50">
+                            <tr class="cursor-pointer hover:bg-slate-50" onclick="window.location='{{ route('email-scans.show', $scan) }}'">
                                 <td class="whitespace-nowrap px-6 py-3 text-slate-500">{{ $scan->created_at->format('M d, H:i') }}</td>
-                                <td class="px-6 py-3 text-slate-700">{{ $scan->sender_email }}</td>
+                                <td class="px-6 py-3">
+                                    <a href="{{ route('email-scans.show', $scan) }}" class="font-medium text-teal-600 hover:text-teal-700">{{ $scan->sender_email }}</a>
+                                </td>
                                 <td class="px-6 py-3 font-medium text-slate-800">{{ $scan->risk_score }}</td>
                                 <td class="px-6 py-3">
                                     <span class="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold {{ $levelStyles[$scan->risk_level] ?? 'bg-slate-100 text-slate-700 border-slate-200' }}">{{ $scan->risk_level }}</span>

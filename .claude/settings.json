@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(php artisan serve --port=8901 2>&1)",
+      "PowerShell(Start-Sleep -Seconds 3; try { $r = Invoke-WebRequest -Uri \"http://127.0.0.1:8901/\" -UseBasicParsing -TimeoutSec 15; \"STATUS: $\\($r.StatusCode\\)\"; if \\($r.Content -match 'Stop fraud'\\) { \"OK: hero rendered\" }; if \\($r.Content -match 'SendLock'\\) { \"OK: brand present\" }; if \\($r.Content -match 'Request a Demo'\\) { \"OK: header CTA present\" } } catch { \"ERR: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://127.0.0.1:8901/login\" -UseBasicParsing -TimeoutSec 15; \"LOGIN STATUS: $\\($r.StatusCode\\)\"; if \\($r.Content -match 'SendLock'\\) { \"OK: branded auth\" } } catch { \"ERR: $\\($_.Exception.Message\\)\" })",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8901/)",
+      "PowerShell(php artisan test --filter=\"new users can register\" 2>&1)",
+      "PowerShell(php artisan serve --port=8902 2>&1)",
+      "PowerShell(Start-Sleep -Seconds 3; try { $r = Invoke-WebRequest -Uri \"http://127.0.0.1:8902/register\" -UseBasicParsing -TimeoutSec 15; \"STATUS: $\\($r.StatusCode\\)\"; if \\($r.Content -match 'Create your organization'\\) { \"OK: heading\" }; if \\($r.Content -match 'Select your industry'\\) { \"OK: industry dropdown\" }; if \\($r.Content -match 'Work email'\\) { \"OK: admin fields\" } } catch { \"ERR: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(php artisan test tests/Feature/Auth/AuthenticationTest.php 2>&1)",
+      "PowerShell(php artisan test --filter=\"SubOrganizationDashboard|AuditLog\" 2>&1)",
+      "PowerShell(php artisan test --filter=\"AuditLogVisibility\" 2>&1)",
+      "PowerShell(vendor/bin/pint app/Models/AuditLog.php app/Http/Controllers/AuditLogController.php app/Http/Controllers/DashboardController.php tests/Feature/AuditLogVisibilityTest.php 2>&1)"
+    ]
+  }
+}

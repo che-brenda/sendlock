@@ -40,11 +40,12 @@
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-600 text-xs font-semibold text-white">
-                                            {{ strtoupper(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1)) }}
+                                            {{ $user->initials }}
                                         </span>
                                         <div>
-                                            <p class="font-medium text-slate-800">{{ $user->first_name }} {{ $user->last_name }}</p>
+                                            <p class="font-medium text-slate-800">{{ $user->display_name }}</p>
                                             <p class="text-xs text-slate-400">{{ $user->job_title ?? '—' }}</p>
+                                            <x-temporary-password :user="$user" class="mt-1.5" />
                                         </div>
                                     </div>
                                 </td>

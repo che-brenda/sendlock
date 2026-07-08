@@ -34,6 +34,8 @@
              exercise a real driver override these per-test via config(). -->
         <env name="SENDLOCK_OCR_DRIVER" value="null"/>
         <env name="SENDLOCK_AI_DRIVER" value="null"/>
+        <env name="SENDLOCK_DNS_DRIVER" value="null"/>
+        <env name="SENDLOCK_DOMAIN_AGE_DRIVER" value="null"/>
         <env name="SENDLOCK_VERIFICATION_DRIVER" value="log"/>
         <env name="SENDLOCK_EMAIL_AUTH_DRIVER" value="null"/>
         <env name="SENDLOCK_THREAT_FEEDS" value=""/>

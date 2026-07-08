@@ -78,18 +78,11 @@
                         </div>
                     </div>
 
-                    <div>
-                        <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Password</p>
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="{{ $label }}">Password</label>
-                                <input type="password" name="password" required autocomplete="new-password" class="{{ $field }}">
-                            </div>
-                            <div>
-                                <label class="{{ $label }}">Confirm password</label>
-                                <input type="password" name="password_confirmation" required autocomplete="new-password" class="{{ $field }}">
-                            </div>
-                        </div>
+                    <div class="flex items-start gap-3 rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm text-teal-800">
+                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-teal-600" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                        </svg>
+                        <p>A <span class="font-semibold">temporary password</span> is generated automatically and shown on the Users list once you save. Share it with the new user — they'll be required to set their own password the first time they sign in.</p>
                     </div>
 
                     <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-5">

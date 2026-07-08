@@ -7,6 +7,7 @@ $styles = [
     'RELEASED' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
     'REJECTED' => 'bg-rose-100 text-rose-700 border-rose-200',
     'BLOCKED' => 'bg-rose-100 text-rose-700 border-rose-200',
+    'CANCELLED' => 'bg-slate-100 text-slate-600 border-slate-200',
 ];
 $labels = [
     'PENDING_VERIFICATION' => 'Awaiting Verification',
@@ -14,6 +15,7 @@ $labels = [
     'RELEASED' => 'Released',
     'REJECTED' => 'Rejected',
     'BLOCKED' => 'Blocked',
+    'CANCELLED' => 'Cancelled',
 ];
 @endphp
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmailScanController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\OrganizationManagementController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProtectedEmailController;
 use App\Http\Controllers\RecipientVerificationController;
+use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SecurityInsightsController;
 use App\Http\Controllers\SubOrganizationController;
 use App\Http\Controllers\ThreatIntelController;
@@ -21,6 +23,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Public Terms & Conditions (linked from the registration page).
+Route::view('/terms', 'terms')->name('terms');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -30,8 +35,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
     Route::get('/email-scans', [EmailScanController::class, 'index'])->name('email-scans.index');
     Route::post('/email-scans/analyze', [EmailScanController::class, 'analyze'])->name('email-scans.analyze');
+    Route::get('/risk-analysis', [EmailScanController::class, 'latest'])->name('risk-analysis');
+    Route::get('/email-scans/{emailScan}', [EmailScanController::class, 'show'])->name('email-scans.show');
 
     // Auto-flagged impersonation / untrusted domains: review register + the
     // "request manager authorization" escalation from the popup warning.
@@ -111,6 +119,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/send-protected', [ProtectedEmailController::class, 'create'])->name('protected-email.create');
     Route::post('/send-protected', [ProtectedEmailController::class, 'store'])->name('protected-email.store');
     Route::get('/send-protected/{approvalRequest}', [ProtectedEmailController::class, 'show'])->name('protected-email.show');
+    Route::post('/send-protected/{approvalRequest}/send', [ProtectedEmailController::class, 'send'])->name('protected-email.send');
+    Route::post('/send-protected/{approvalRequest}/cancel', [ProtectedEmailController::class, 'cancel'])->name('protected-email.cancel');
+    Route::post('/send-protected/{approvalRequest}/escalate', [ProtectedEmailController::class, 'escalate'])->name('protected-email.escalate');
+    Route::post('/send-protected/{approvalRequest}/trust', [ProtectedEmailController::class, 'trustRecipient'])->name('protected-email.trust');
 
     // Recipient Verification Center.
     Route::get('/recipient-verification', [RecipientVerificationController::class, 'index'])->name('recipient-verification.index');
@@ -160,6 +172,32 @@ Route::middleware(['auth', 'org.admin'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Billing — subscription packages & (stubbed) payment
+|--------------------------------------------------------------------------
+| New organizations are held at /billing by the EnsureSubscribed middleware
+| until they pay for a package, which grants its plan entitlements.
+*/
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::post('/billing/free', [BillingController::class, 'selectFree'])->name('billing.free');
+
+    // Super Admin (product owner): every customer's billing status.
+    Route::get('/billing/customers', [BillingController::class, 'customers'])
+        ->middleware('superadmin')->name('billing.customers');
+
+    Route::get('/billing/{package}/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
+    Route::post('/billing/{package}', [BillingController::class, 'process'])->name('billing.process');
+
+});
+
+// An organization's own subscription detail (org sidebar → Subscription).
+Route::middleware(['auth', 'org.admin'])->group(function () {
+    Route::get('/subscription', [BillingController::class, 'subscription'])->name('subscription.index');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Placeholder routes for features scheduled in later phases
 |--------------------------------------------------------------------------
 | These keep every menu in the UI navigable now. Each renders a styled
@@ -169,12 +207,6 @@ Route::middleware(['auth', 'org.admin'])->group(function () {
 Route::middleware(['auth'])->group(function () {
 
     $placeholder = fn (string $title, string $phase, string $summary) => view('placeholder', compact('title', 'phase', 'summary'));
-
-    Route::get('/billing', fn () => $placeholder(
-        'Plans & Billing',
-        'Phase 1+',
-        'Subscription plans, seat counts and invoicing for head organizations and their sub-organizations.'
-    ))->name('billing.index');
 
     // Phase 4 — security insight pages derived from scan history.
     Route::get('/threat-overview', [SecurityInsightsController::class, 'threatOverview'])

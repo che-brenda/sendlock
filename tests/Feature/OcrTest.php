@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\EmailScan;
 use App\Models\Organization;
 use App\Models\TrustedDomain;
 use App\Services\Ocr\NullOcrDriver;
@@ -69,10 +70,12 @@ test('an uploaded attachment is OCR-scanned and its text influences the verdict'
 
     $response->assertRedirect();
 
-    $findings = session('findings');
+    // Findings are now persisted on the scan and shown on the risk-analysis page.
+    $scan = EmailScan::where('organization_id', $this->org->id)->latest('id')->first();
+    $findings = $scan->findings;
     expect(collect($findings)->contains(fn ($f) => str_contains($f, 'OCR')))->toBeTrue();
     expect(collect($findings)->contains(fn ($f) => str_contains($f, 'bank account')))->toBeTrue();
-    expect(session('risk_score'))->toBeGreaterThan(0);
+    expect($scan->risk_score)->toBeGreaterThan(0);
 });
 
 test('a scan with no uploaded file is unaffected by OCR', function () {

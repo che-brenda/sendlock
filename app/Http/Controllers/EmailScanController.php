@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\AuditLogger;
 use App\Models\EmailScan;
+use App\Services\CommunicationHistoryService;
 use App\Services\FlaggedDomainService;
 use App\Services\Ocr\OcrService;
 use App\Services\RiskEngine;
@@ -74,7 +75,7 @@ class EmailScanController extends Controller
             array_unshift($result['findings'], 'Text extracted from an attachment via OCR and analysed');
         }
 
-        EmailScan::create([
+        $scan = EmailScan::create([
             'organization_id' => $organizationId,
             'user_id' => auth()->id(),
             'sender_email' => $request->sender_email,
@@ -87,6 +88,7 @@ class EmailScanController extends Controller
             'confidence' => $result['confidence'],
             'recommendations' => $result['recommendations'],
             'findings' => $result['findings'],
+            'analysis' => $result['analysis'] ?? [],
             'is_trusted_domain' => $result['signals']['is_trusted_domain'] ?? false,
             'is_blocked_domain' => $result['signals']['is_blocked_domain'] ?? false,
             'spf_pass' => (bool) ($result['signals']['spf_pass'] ?? false),
@@ -94,10 +96,14 @@ class EmailScanController extends Controller
             'dmarc_pass' => (bool) ($result['signals']['dmarc_pass'] ?? false),
         ]);
 
+        // Record the interaction AFTER scoring, so this message is not counted as
+        // its own "previous communication" (Communication Relationship Analysis).
+        CommunicationHistoryService::record($organizationId, $request->sender_email);
+
         AuditLogger::log(
             'SCAN',
             'EMAIL',
-            null,
+            $scan->id,
             'Scanned '.$request->sender_email.' — '.$result['risk_level'].' ('.$result['decision'].')'
         );
 
@@ -110,14 +116,7 @@ class EmailScanController extends Controller
             auth()->id()
         );
 
-        $flash = [
-            'risk_score' => $result['risk_score'],
-            'risk_level' => $result['risk_level'],
-            'decision' => $result['decision'],
-            'confidence' => $result['confidence'],
-            'recommendations' => $result['recommendations'],
-            'findings' => $result['findings'],
-        ];
+        $flash = [];
 
         if ($record && $record['repeat']) {
             $flash['domain_warning'] = $this->warningPayload($record['flagged'], [
@@ -127,7 +126,31 @@ class EmailScanController extends Controller
             ], 'scan');
         }
 
-        return back()->with($flash);
+        // The full risk analysis is shown automatically on its own page.
+        return redirect()->route('email-scans.show', $scan)->with($flash);
+    }
+
+    public function show(EmailScan $emailScan)
+    {
+        $scan = EmailScan::where('organization_id', auth()->user()->organization_id)
+            ->findOrFail($emailScan->id);
+
+        return view('email-scans.show', compact('scan'));
+    }
+
+    /**
+     * Sidebar "Risk Analysis" shortcut — open the most recent scan's analysis,
+     * or send the user to the scan form if they have none yet.
+     */
+    public function latest()
+    {
+        $scan = EmailScan::where('organization_id', auth()->user()->organization_id)
+            ->latest()
+            ->first();
+
+        return $scan
+            ? redirect()->route('email-scans.show', $scan)
+            : redirect()->route('email-scans.index')->with('info', 'Run a scan to see its risk analysis.');
     }
 
     /**

@@ -25,15 +25,15 @@
                 </div>
 
                 <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <form method="POST" action="{{ route('approvals.approve', $req) }}" class="flex gap-2">
+                    <form method="POST" action="{{ route('approvals.approve', $req) }}" class="flex items-center gap-2">
                         @csrf
                         <input type="text" name="notes" placeholder="Note (optional)" class="flex-1 rounded-lg border-slate-300 text-sm focus:border-teal-500 focus:ring-teal-500">
-                        <button class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">Approve</button>
+                        <x-confirm-submit label="Approve" message="Approve and clear this send?" confirm="Yes, approve" class="bg-emerald-600 text-white hover:bg-emerald-700" />
                     </form>
-                    <form method="POST" action="{{ route('approvals.reject', $req) }}" class="flex gap-2">
+                    <form method="POST" action="{{ route('approvals.reject', $req) }}" class="flex items-center gap-2">
                         @csrf
                         <input type="text" name="notes" placeholder="Reason (optional)" class="flex-1 rounded-lg border-slate-300 text-sm focus:border-rose-500 focus:ring-rose-500">
-                        <button class="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700">Reject</button>
+                        <x-confirm-submit label="Reject" message="Reject this send?" confirm="Yes, reject" class="bg-rose-600 text-white hover:bg-rose-700" />
                     </form>
                 </div>
             </div>

@@ -1,8 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
+        @php
+            $viewer = auth()->user();
+            $logScope = $viewer->isSuperAdmin()
+                ? 'across every subscribed organization'
+                : (($viewer->isOrgAdmin() || $viewer->isHeadOrgAdmin())
+                    ? 'in your organization'
+                    : 'you have performed');
+        @endphp
         <div>
             <h2 class="text-xl font-semibold leading-tight text-slate-800">Audit Log</h2>
-            <p class="text-sm text-slate-400">A chronological record of every mutating action in your organization</p>
+            <p class="text-sm text-slate-400">A chronological record of every mutating action {{ $logScope }}</p>
         </div>
     </x-slot>
 

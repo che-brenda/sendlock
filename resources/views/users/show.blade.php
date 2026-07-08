@@ -18,10 +18,10 @@
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex items-center gap-4">
                     <span class="flex h-14 w-14 items-center justify-center rounded-full bg-teal-600 text-lg font-semibold text-white">
-                        {{ strtoupper(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1)) }}
+                        {{ $user->initials }}
                     </span>
                     <div>
-                        <p class="text-lg font-semibold text-slate-900">{{ $user->first_name }} {{ $user->last_name }}</p>
+                        <p class="text-lg font-semibold text-slate-900">{{ $user->display_name }}</p>
                         <p class="text-sm text-slate-500">{{ $user->job_title ?? 'No title' }}</p>
                     </div>
                     <div class="ml-auto">
@@ -33,6 +33,22 @@
                     </div>
                 </div>
             </div>
+
+            @if($user->hasPendingTemporaryPassword())
+            <!-- Temporary credential (only until the user signs in and sets their own) -->
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+                <div class="flex items-start gap-3">
+                    <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 00-9 0v3.75m-.75 0h10.5a2.25 2.25 0 012.25 2.25v6.75a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25v-6.75a2.25 2.25 0 012.25-2.25z" />
+                    </svg>
+                    <div>
+                        <p class="text-sm font-semibold text-amber-900">Temporary password</p>
+                        <p class="mt-0.5 text-xs text-amber-700">Share this with the user. It will disappear once they sign in and set their own password.</p>
+                        <x-temporary-password :user="$user" class="mt-3 !px-3 !py-1.5" />
+                    </div>
+                </div>
+            </div>
+            @endif
 
             <!-- Details -->
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">

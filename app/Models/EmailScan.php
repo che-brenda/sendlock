@@ -20,6 +20,7 @@ class EmailScan extends Model
         'confidence',
         'recommendations',
         'findings',
+        'analysis',
         'is_trusted_domain',
         'is_blocked_domain',
         'spf_pass',
@@ -32,6 +33,7 @@ class EmailScan extends Model
 
         'findings' => 'array',
         'recommendations' => 'array',
+        'analysis' => 'array',
 
         'is_trusted_domain' => 'boolean',
         'is_blocked_domain' => 'boolean',

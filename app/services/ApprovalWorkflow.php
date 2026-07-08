@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ApprovalAction;
 use App\Models\ApprovalRequest;
+use App\Models\TrustedDomain;
 use App\Models\VerifiedRecipient;
 use Illuminate\Support\Carbon;
 
@@ -34,6 +35,17 @@ class ApprovalWorkflow
         // A pre-verified recipient does not need re-verification.
         if ($requiresVerification && $this->isVerifiedRecipient($email['recipient_email'], $organizationId)) {
             $requiresVerification = false;
+        }
+
+        // SECURITY GATE — an unregistered (untrusted) counterparty can NEVER be
+        // released automatically. Only a domain/address the org has registered as
+        // trusted may auto-send; everything else must clear a human step — at
+        // minimum manager approval (and, for higher-risk decisions, recipient
+        // verification first). This is what stops a fresh look-alike or any
+        // unknown address slipping out on an ALLOW verdict.
+        if ($decision !== 'QUARANTINE'
+            && ! $this->isTrustedCounterparty($email['recipient_email'], $organizationId)) {
+            $requiresApproval = true;
         }
 
         $request = new ApprovalRequest([
@@ -124,6 +136,22 @@ class ApprovalWorkflow
     }
 
     /**
+     * Escalate to a higher authority: the sender chooses the manager-approval
+     * route instead of recipient verification. Clears the verification
+     * requirement but a manager must still approve before release, so an
+     * untrusted send is never released without a human decision.
+     */
+    public function escalateToApproval(ApprovalRequest $request): ApprovalRequest
+    {
+        $request->requires_verification = false;
+        $request->requires_approval = true;
+        $request->status = $this->nextStatus($request);
+        $request->save();
+
+        return $request;
+    }
+
+    /**
      * Compute the next status from the outstanding requirements.
      */
     private function nextStatus(ApprovalRequest $request): string
@@ -144,6 +172,32 @@ class ApprovalWorkflow
         return VerifiedRecipient::where('organization_id', $organizationId)
             ->where('email', strtolower(trim($email)))
             ->where('verified', true)
+            ->exists();
+    }
+
+    /**
+     * A counterparty the org has explicitly registered as trusted — either a
+     * verified recipient (exact address) or a trusted domain. This is the single
+     * gate that decides whether a send may auto-release.
+     */
+    public function isTrustedCounterparty(string $email, int $organizationId): bool
+    {
+        if ($this->isVerifiedRecipient($email, $organizationId)) {
+            return true;
+        }
+
+        $domain = RiskEngine::domainFromEmail($email);
+
+        // A public provider is never blanket-trusted — only the exact verified
+        // address (checked above) counts, so an unverified gmail/outlook/… address
+        // is always gated.
+        if (PublicEmailProviders::is($domain)) {
+            return false;
+        }
+
+        return TrustedDomain::where('organization_id', $organizationId)
+            ->where('domain', $domain)
+            ->where('active', true)
             ->exists();
     }
 }

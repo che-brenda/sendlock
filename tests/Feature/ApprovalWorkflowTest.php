@@ -2,6 +2,7 @@
 
 use App\Models\ApprovalRequest;
 use App\Models\Organization;
+use App\Models\TrustedDomain;
 use App\Models\User;
 use App\Models\VerifiedRecipient;
 use App\Services\ApprovalWorkflow;
@@ -22,11 +23,23 @@ function emailTo(string $recipient = 'vendor@partner.com'): array
     return ['recipient_email' => $recipient, 'subject' => 'Invoice', 'email_content' => 'Body'];
 }
 
-test('an allowed decision releases immediately', function () {
+test('an allowed decision releases immediately for a trusted counterparty', function () {
+    // Only a registered trusted domain/address may auto-release.
+    TrustedDomain::create(['organization_id' => $this->org->id, 'domain' => 'partner.com', 'active' => true]);
+
     $req = $this->workflow->createFromEvaluation(evaluation('ALLOW', 10, 'LOW'), emailTo(), $this->org->id, $this->user->id);
 
     expect($req->status)->toBe(ApprovalRequest::STATUS_RELEASED);
     expect($req->released_at)->not->toBeNull();
+});
+
+test('an allowed decision to an UNtrusted counterparty is held for approval, never auto-released', function () {
+    // partner.com is not registered as trusted → the ALLOW verdict must not slip out.
+    $req = $this->workflow->createFromEvaluation(evaluation('ALLOW', 10, 'LOW'), emailTo(), $this->org->id, $this->user->id);
+
+    expect($req->status)->toBe(ApprovalRequest::STATUS_PENDING_APPROVAL);
+    expect($req->requires_approval)->toBeTrue();
+    expect($req->released_at)->toBeNull();
 });
 
 test('a manager-approval decision waits for approval', function () {

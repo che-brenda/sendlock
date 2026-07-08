@@ -16,6 +16,8 @@ class ApprovalRequest extends Model
 
     public const STATUS_BLOCKED = 'BLOCKED';
 
+    public const STATUS_CANCELLED = 'CANCELLED';
+
     protected $fillable = [
         'organization_id',
         'user_id',
@@ -33,6 +35,7 @@ class ApprovalRequest extends Model
         'requires_approval',
         'recipient_verified_at',
         'released_at',
+        'sent_at',
     ];
 
     protected $casts = [
@@ -41,6 +44,7 @@ class ApprovalRequest extends Model
         'requires_approval' => 'boolean',
         'recipient_verified_at' => 'datetime',
         'released_at' => 'datetime',
+        'sent_at' => 'datetime',
     ];
 
     public function organization()
@@ -69,6 +73,19 @@ class ApprovalRequest extends Model
             self::STATUS_RELEASED,
             self::STATUS_REJECTED,
             self::STATUS_BLOCKED,
+            self::STATUS_CANCELLED,
         ], true);
+    }
+
+    /**
+     * Whether this send cleared BOTH recipient verification AND manager approval
+     * and is released — the precondition for offering to add its domain/address
+     * to the trusted database.
+     */
+    public function wasVerifiedAndApproved(): bool
+    {
+        return $this->status === self::STATUS_RELEASED
+            && $this->recipient_verified_at !== null
+            && $this->actions()->where('action', ApprovalAction::ACTION_APPROVED)->exists();
     }
 }

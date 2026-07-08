@@ -24,6 +24,55 @@
     <div class="py-8">
         <div class="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
 
+            @php
+                $viewer = auth()->user();
+                $showSubscription = ($currentOrg ?? null) && ($viewer->isOrgAdmin() || $viewer->isHeadOrgAdmin());
+            @endphp
+            @if($showSubscription)
+            @php
+                $subState = $currentOrg->subscriptionState();
+                $subDays = $currentOrg->daysUntilExpiry();
+            @endphp
+            <!-- Subscription status (org can check its billing at a glance) -->
+            <div @class([
+                'flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-white p-5 shadow-sm',
+                'border-rose-200' => $subState === 'expired',
+                'border-amber-200' => in_array($subState, ['expiring_soon', 'pending'], true),
+                'border-slate-200' => ! in_array($subState, ['expired', 'expiring_soon', 'pending'], true),
+            ])>
+                <div class="flex items-center gap-4">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" /></svg>
+                    </span>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <p class="font-semibold text-slate-800">{{ $currentOrg->planLabel() }} plan</p>
+                            <x-subscription-badge :organization="$currentOrg" />
+                        </div>
+                        <p class="mt-0.5 text-sm text-slate-500">
+                            @switch($subState)
+                                @case('expired') Subscription expired on {{ $currentOrg->subscription_expires_at?->format('M d, Y') }}. @break
+                                @case('expiring_soon') Renews in {{ $subDays }} {{ \Illuminate\Support\Str::plural('day', $subDays) }} ({{ $currentOrg->subscription_expires_at?->format('M d, Y') }}). @break
+                                @case('active') Renews {{ $currentOrg->subscription_expires_at?->format('M d, Y') }}. @break
+                                @case('free') You're on the Free plan — upgrade anytime. @break
+                                @case('pending') Awaiting payment — choose a package to activate. @break
+                                @default No active subscription.
+                            @endswitch
+                        </p>
+                    </div>
+                </div>
+                <a href="{{ route('subscription.index') }}"
+                   @class([
+                       'shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition',
+                       'bg-rose-600 text-white hover:bg-rose-700' => $subState === 'expired',
+                       'bg-amber-600 text-white hover:bg-amber-700' => in_array($subState, ['expiring_soon', 'pending'], true),
+                       'bg-slate-900 text-white hover:bg-slate-700' => ! in_array($subState, ['expired', 'expiring_soon', 'pending'], true),
+                   ])>
+                    {{ in_array($subState, ['expired', 'expiring_soon'], true) ? 'Renew' : 'View subscription' }}
+                </a>
+            </div>
+            @endif
+
             <!-- Stat cards (link to the relevant management pages where accessible) -->
             <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
                 @php
@@ -65,6 +114,11 @@
             @if(($aggregatesSubOrgs ?? false))
             <p class="-mt-4 text-xs text-slate-400">Totals above include this organization and its sub-organizations.</p>
             @endif
+
+            <!-- Top risk reasons (data-driven from this org's scan history) -->
+            @isset($riskReasons)
+            <x-risk-chart :segments="$riskReasons" :total="$riskTotal" :size="220" title="Top Risk Reasons" />
+            @endisset
 
             <!-- Sub-Organizations (head organization view) -->
             @if(($subOrganizations ?? collect())->isNotEmpty())
