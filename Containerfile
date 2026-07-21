@@ -32,7 +32,8 @@ COPY . .
 RUN composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress --no-scripts
 
 # --- Stage 3: runtime ---------------------------------------------------------
-FROM registry.access.redhat.com/ubi9/php-83:latest AS runtime
+# PHP 8.4 required: the locked dependencies (Symfony 8.x) need >= 8.4.1.
+FROM registry.access.redhat.com/ubi10/php-84:latest AS runtime
 
 # The s2i php image serves ${APP_ROOT}/src (= /opt/app-root/src) via Apache on
 # 8080; DOCUMENTROOT points Apache at Laravel's public/ directory.
@@ -45,6 +46,8 @@ WORKDIR /opt/app-root/src
 COPY --chown=1001:0 . .
 COPY --chown=1001:0 --from=vendor /app/vendor ./vendor
 COPY --chown=1001:0 --from=assets /app/public/build ./public/build
+# The UBI php base has no composer (s2i normally downloads it at assemble time).
+COPY --from=vendor /usr/bin/composer /usr/local/bin/composer
 
 # Regenerate the autoloader + package manifest inside the final tree, then make
 # the writable paths group-0 writable so an arbitrary OpenShift UID can use them.
