@@ -1,0 +1,96 @@
+# In-cluster PostgreSQL 16 for SendLock — a simple single-replica setup using
+# Red Hat's SCLorg image (public on quay.io, runs as arbitrary UID out of the box).
+#
+# For production-grade HA/backups, prefer an operator (Crunchy PGO,
+# CloudNativePG) or an external managed database and delete this file — the app
+# only needs DB_HOST/DB_DATABASE (ConfigMap) + DB_USERNAME/DB_PASSWORD (Secret)
+# to point elsewhere.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sendlock-postgresql
+  labels:
+    app: sendlock
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sendlock-postgresql
+  labels:
+    app: sendlock
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sendlock
+      component: postgresql
+  template:
+    metadata:
+      labels:
+        app: sendlock
+        component: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: quay.io/sclorg/postgresql-16-c9s:latest
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRESQL_DATABASE
+              value: sendlock
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: sendlock-secrets
+                  key: DB_USERNAME
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sendlock-secrets
+                  key: DB_PASSWORD
+          readinessProbe:
+            exec:
+              command: ["/usr/libexec/check-container"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["/usr/libexec/check-container", "--live"]
+            initialDelaySeconds: 120
+            periodSeconds: 20
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/pgsql/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: sendlock-postgresql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sendlock-postgresql
+  labels:
+    app: sendlock
+spec:
+  selector:
+    app: sendlock
+    component: postgresql
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432

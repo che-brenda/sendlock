@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sendlock-config
+  labels:
+    app: sendlock
+data:
+  APP_NAME: "SendLock"
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  # Set to the public Route host once known.
+  APP_URL: "https://sendlock.example.com"
+
+  # The OpenShift router terminates TLS; trust its forwarded headers so HTTPS
+  # detection, secure cookies, and HSTS work.
+  TRUSTED_PROXIES: "*"
+
+  # Containers log to stderr so `oc logs` captures everything.
+  LOG_CHANNEL: "stderr"
+  LOG_LEVEL: "info"
+  LOG_DEPRECATIONS_CHANNEL: "null"
+
+  DB_CONNECTION: "pgsql"
+  DB_HOST: "sendlock-postgresql"
+  DB_PORT: "5432"
+  DB_DATABASE: "sendlock"
+
+  # Database-backed session/cache/queue keep pods stateless (safe to scale).
+  SESSION_DRIVER: "database"
+  SESSION_LIFETIME: "120"
+  SESSION_SECURE_COOKIE: "true"
+  CACHE_STORE: "database"
+  QUEUE_CONNECTION: "database"
+  FILESYSTEM_DISK: "local"
+  BROADCAST_CONNECTION: "log"
+
+  # No real mailer configured yet — resets/notifications are logged, not sent.
+  MAIL_MAILER: "log"
+  MAIL_FROM_ADDRESS: "no-reply@sendlock.example.com"
+
+  # SendLock drivers: free/log/null defaults; no external calls, nothing billed.
+  SENDLOCK_VERIFICATION_DRIVER: "log"
+  SENDLOCK_OCR_DRIVER: "null"
+  SENDLOCK_AI_DRIVER: "null"
+  SENDLOCK_THREAT_FEEDS: ""
+  SENDLOCK_THREAT_LISTS: ""

@@ -1,0 +1,35 @@
+# Never bake local state or secrets into the image.
+.git
+.github
+.env
+.env.*
+!.env.example
+!.env.production.example
+auth.json
+
+# Rebuilt inside the image (stages 1 and 2).
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+
+# Local artifacts / editor state.
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/pail
+.phpunit.result.cache
+.phpunit.cache
+.idea
+.vscode
+.zed
+.nova
+.cursor
+.codex
+Thumbs.db
+.DS_Store
+
+# Not needed at runtime.
+tests
