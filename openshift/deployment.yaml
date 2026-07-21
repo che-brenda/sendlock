@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sendlock
+  labels:
+    app: sendlock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sendlock
+  template:
+    metadata:
+      labels:
+        app: sendlock
+    spec:
+      containers:
+        - name: sendlock
+          # The real image reference is set once in kustomization.yaml (images:).
+          image: sendlock-app
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: sendlock-config
+            - secretRef:
+                name: sendlock-secrets
+          # Laravel's built-in health endpoint (bootstrap/app.php: health '/up').
+          readinessProbe:
+            httpGet:
+              path: /up
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /up
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi

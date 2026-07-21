@@ -1,0 +1,46 @@
+# Deploy-time database setup: migrations + the roles/permissions seed the app
+# requires before it is usable. The seeder is idempotent (firstOrCreate /
+# syncPermissions), so re-running on every deploy is safe.
+#
+# Jobs are immutable — delete and re-apply on each deploy:
+#   oc delete job sendlock-migrate --ignore-not-found && oc apply -f openshift/migrate-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sendlock-migrate
+  labels:
+    app: sendlock
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app: sendlock
+        job: migrate
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          # This Job is applied directly (not via kustomize), so the image is
+          # concrete: replace SENDLOCK_NAMESPACE with your project name, same
+          # as in kustomization.yaml.
+          image: image-registry.openshift-image-registry.svc:5000/SENDLOCK_NAMESPACE/sendlock:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              php artisan migrate --force
+              php artisan db:seed --class=RolesAndPermissionsSeeder --force
+          envFrom:
+            - configMapRef:
+                name: sendlock-config
+            - secretRef:
+                name: sendlock-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi

@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: sendlock
+  labels:
+    app: sendlock
+spec:
+  # Omit `host` to let the cluster assign sendlock-<namespace>.apps.<domain>;
+  # whatever the final host is, mirror it in the ConfigMap's APP_URL.
+  to:
+    kind: Service
+    name: sendlock
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

@@ -19,6 +19,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
 
+        // Behind a TLS-terminating proxy (the OpenShift router), trust the
+        // X-Forwarded-* headers so HTTPS detection, secure cookies, HSTS, and
+        // generated URLs are correct. Unset (the default) trusts nothing, which
+        // keeps local dev behaviour unchanged. Set TRUSTED_PROXIES to '*' or a
+        // comma-separated list of proxy IPs/CIDRs.
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(
+                at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)),
+            );
+        }
+
         $middleware->alias([
             'superadmin' => EnsureSuperAdmin::class,
             'headorg.admin' => EnsureHeadOrgAdmin::class,
