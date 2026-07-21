@@ -45,6 +45,8 @@ WORKDIR /opt/app-root/src
 COPY --chown=1001:0 . .
 COPY --chown=1001:0 --from=vendor /app/vendor ./vendor
 COPY --chown=1001:0 --from=assets /app/public/build ./public/build
+# The UBI php base has no composer (s2i normally downloads it at assemble time).
+COPY --from=vendor /usr/bin/composer /usr/local/bin/composer
 
 # Regenerate the autoloader + package manifest inside the final tree, then make
 # the writable paths group-0 writable so an arbitrary OpenShift UID can use them.
