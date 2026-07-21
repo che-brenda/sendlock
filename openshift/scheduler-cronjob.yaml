@@ -1,0 +1,40 @@
+# Runs the Laravel scheduler. The only scheduled task today is the hourly
+# sendlock:import-threat-feeds refresh (routes/console.php), so an hourly
+# CronJob is enough. If a task with a finer cadence is ever scheduled, tighten
+# this cron expression to match (Laravel's canonical setup is every minute).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sendlock-scheduler
+  labels:
+    app: sendlock
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app: sendlock
+            job: scheduler
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scheduler
+              image: sendlock-app
+              command: ["php", "artisan", "schedule:run"]
+              envFrom:
+                - configMapRef:
+                    name: sendlock-config
+                - secretRef:
+                    name: sendlock-secrets
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  memory: 512Mi

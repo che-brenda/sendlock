@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Not included on purpose:
+#   secret.example.yaml — create the real secret manually (see its header)
+#   migrate-job.yaml    — Jobs are immutable; delete + re-apply per deploy
+resources:
+  - buildconfig.yaml
+  - configmap.yaml
+  - postgresql.yaml
+  - deployment.yaml
+  - service.yaml
+  - route.yaml
+  - scheduler-cronjob.yaml
+
+# Rewrites the `sendlock-app` placeholder in deployment/job manifests to the
+# real image. Replace SENDLOCK_NAMESPACE with your project name (`oc project -q`).
+images:
+  - name: sendlock-app
+    newName: image-registry.openshift-image-registry.svc:5000/SENDLOCK_NAMESPACE/sendlock
+    newTag: latest
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: sendlock
+    includeSelectors: false
