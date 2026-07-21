@@ -1,0 +1,84 @@
+# Builds the production container image (Containerfile) and smoke-tests it
+# against PostgreSQL — the same runtime shape OpenShift will run. This is the
+# OpenShift-readiness gate: if this passes, `oc start-build` will too.
+name: Container build
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: podman build -f Containerfile -t sendlock:ci .
+
+      - name: Start PostgreSQL
+        run: |
+          podman network create sendlock
+          podman run -d --network sendlock --name db \
+            -e POSTGRESQL_USER=sendlock \
+            -e POSTGRESQL_PASSWORD=ci-secret \
+            -e POSTGRESQL_DATABASE=sendlock \
+            quay.io/sclorg/postgresql-16-c9s:latest
+          for i in $(seq 1 30); do
+            podman exec db pg_isready -U sendlock -d sendlock && break
+            sleep 2
+          done
+
+      - name: Start app container
+        run: |
+          APP_KEY=$(podman run --rm sendlock:ci php artisan key:generate --show)
+          podman run -d --network sendlock --name app -p 8080:8080 \
+            -e APP_KEY="$APP_KEY" \
+            -e APP_ENV=production \
+            -e APP_DEBUG=false \
+            -e APP_URL=http://localhost:8080 \
+            -e LOG_CHANNEL=stderr \
+            -e TRUSTED_PROXIES='*' \
+            -e SESSION_SECURE_COOKIE=false \
+            -e DB_CONNECTION=pgsql \
+            -e DB_HOST=db \
+            -e DB_PORT=5432 \
+            -e DB_DATABASE=sendlock \
+            -e DB_USERNAME=sendlock \
+            -e DB_PASSWORD=ci-secret \
+            sendlock:ci
+          for i in $(seq 1 30); do
+            curl -fsS -o /dev/null http://localhost:8080/up && break
+            sleep 2
+          done
+
+      - name: Migrate and seed
+        run: |
+          podman exec app php artisan migrate --force
+          podman exec app php artisan db:seed --class=RolesAndPermissionsSeeder --force
+
+      - name: Smoke test
+        run: |
+          set -x
+          # Health endpoint (OpenShift probe target)
+          curl -fsS http://localhost:8080/up > /dev/null
+          # Public pages render (these hit the database via sessions)
+          for path in / /login /register /terms; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080$path")
+            [ "$code" = "200" ] || { echo "FAIL: $path returned $code"; exit 1; }
+          done
+          # Security headers present
+          curl -s -D - -o /dev/null http://localhost:8080/ | grep -qi "Content-Security-Policy"
+          # Firewall blocks scanner user agents
+          code=$(curl -s -o /dev/null -w "%{http_code}" -A "sqlmap/1.7" http://localhost:8080/)
+          [ "$code" = "403" ] || { echo "FAIL: firewall did not block sqlmap UA (got $code)"; exit 1; }
+          echo "All smoke tests passed."
+
+      - name: Container logs (on failure)
+        if: failure()
+        run: |
+          podman logs app || true
+          podman logs db || true
