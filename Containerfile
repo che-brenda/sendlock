@@ -32,7 +32,8 @@ COPY . .
 RUN composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress --no-scripts
 
 # --- Stage 3: runtime ---------------------------------------------------------
-FROM registry.access.redhat.com/ubi9/php-83:latest AS runtime
+# PHP 8.4 required: the locked dependencies (Symfony 8.x) need >= 8.4.1.
+FROM registry.access.redhat.com/ubi10/php-84:latest AS runtime
 
 # The s2i php image serves ${APP_ROOT}/src (= /opt/app-root/src) via Apache on
 # 8080; DOCUMENTROOT points Apache at Laravel's public/ directory.
