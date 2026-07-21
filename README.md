@@ -1,58 +1,73 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SendLock
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+SendLock is a multi-tenant email-security SaaS (anti-phishing / anti-BEC) built on Laravel.
+Its differentiator is **outbound** protection: recipient verification (SMS/WhatsApp/email)
+and approval workflows before sensitive information leaves the organization, alongside a
+full inbound risk-scoring engine (domain intelligence, content analysis, SPF/DKIM/DMARC,
+URL & attachment inspection, threat feeds).
 
-## About Laravel
+Each customer is an **Organization** (the tenant). See `CLAUDE.md` for the full
+architecture guide and conventions.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Getting started
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Requirements
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **PHP 8.4+** (the locked dependencies require ≥ 8.4.1) with extensions:
+  `pdo_sqlite` (or `pdo_pgsql` for PostgreSQL), `mbstring`, `openssl`, `curl`,
+  `fileinfo`, `zip`
+- **Composer 2**
+- **Node.js 20+** and npm
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Setup
 
 ```bash
-composer require laravel/boost --dev
+git clone https://github.com/che-brenda/sendlock.git
+cd sendlock
 
-php artisan boost:install
+composer setup        # install deps, copy .env, generate key, migrate, build assets
+php artisan db:seed --class=RolesAndPermissionsSeeder   # REQUIRED before the app is usable
+
+composer dev          # server + queue + logs + vite together
+# or simply: php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+The app is now at <http://localhost:8000>. Register a new organization at `/register` —
+sign-up creates the org and its founding admin, then lands on the billing page (pick the
+**Free** plan to pass the subscription gate and reach the dashboard).
 
-## Contributing
+The default `.env` uses **SQLite** and stubbed drivers (verification codes are written to
+the log, no external services are called, nothing is billed). For PostgreSQL, set the
+`DB_*` variables accordingly. All integrations (Twilio, AI classification, threat feeds,
+OCR) are opt-in via `.env` — see the annotated `.env.example`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Tests
 
-## Code of Conduct
+```bash
+composer test         # full Pest suite (SQLite in-memory, no external calls)
+php artisan test --filter=ProfileTest   # single class
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Container
 
-## Security Vulnerabilities
+A production image is defined in `Containerfile` (multi-stage; UBI PHP + Apache,
+non-root, port 8080):
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+podman build -f Containerfile -t sendlock .
+```
 
-## License
+CI (`.github/workflows/container-build.yml`) builds this image and smoke-tests it against
+PostgreSQL on every push to `dev`/`main`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Deployment (Red Hat OpenShift)
+
+Everything needed to deploy lives in `openshift/` — see **`openshift/README.md`** for the
+step-by-step guide (in-cluster build, ConfigMap/Secret, Deployment with health probes,
+Route, migrations Job, scheduler CronJob, PostgreSQL).
+
+## Branch workflow
+
+- **`main`** — source of truth.
+- **`dev`** — staging; changes land here first and are merged to `main` via pull request
+  after review.
