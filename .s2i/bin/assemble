@@ -2,5 +2,4 @@
 set -e
 
 # Execute default OpenShift PHP run script (starts httpd automatically)
-chmod -R 777 storage bootstrap/cache
 exec /usr/libexec/s2i/run
