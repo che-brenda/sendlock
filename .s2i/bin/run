@@ -1,7 +1,32 @@
 #!/bin/bash
 set -e
 
-echo "===> Starting Laravel application container..."
+cd /opt/app-root/src
 
-# Hand off execution to standard OpenShift S2I runner
+# php-fpm runs with clear_env on in this image, so environment variables set on
+# the Deployment never reach the PHP application. Laravel reads config from a
+# .env file on disk regardless of fpm's env stripping, so we materialize one
+# from the container environment on every start. Values fall back to sane
+# defaults; only APP_KEY must be provided (via `oc set env` / a Secret).
+cat > .env <<ENV
+APP_NAME=${APP_NAME:-SendLock}
+APP_ENV=${APP_ENV:-production}
+APP_KEY=${APP_KEY}
+APP_DEBUG=${APP_DEBUG:-false}
+APP_URL=${APP_URL:-http://localhost}
+LOG_CHANNEL=${LOG_CHANNEL:-stderr}
+LOG_LEVEL=${LOG_LEVEL:-error}
+SESSION_DRIVER=${SESSION_DRIVER:-file}
+CACHE_STORE=${CACHE_STORE:-file}
+QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}
+DB_CONNECTION=${DB_CONNECTION:-sqlite}
+DB_DATABASE=${DB_DATABASE:-/opt/app-root/src/database/database.sqlite}
+DB_HOST=${DB_HOST:-}
+DB_PORT=${DB_PORT:-}
+DB_USERNAME=${DB_USERNAME:-}
+DB_PASSWORD=${DB_PASSWORD:-}
+ENV
+
+# Hand off to the standard sclorg runner, which applies DOCUMENTROOT (=/public)
+# to Apache's DocumentRoot and starts httpd + php-fpm.
 exec /usr/libexec/s2i/run

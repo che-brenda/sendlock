@@ -420,3 +420,50 @@ This project uses lowercase `app/services/` and `app/helpers/` directories, but 
 namespaces are still PSR-4 capitalized (`App\Services`, `App\Helpers`). Keep that mismatch
 when adding files there, or PSR-4 autoloading will fail.
 
+## Deployment (OpenShift / S2I)
+
+Deploys to **OpenShift** via **Source-to-Image (S2I)** on the sclorg **`php:8.3-ubi10`** builder
+(Apache + php-fpm). Live target: Red Hat Developer Sandbox, project `chebrenda93-dev`, BuildConfig/
+Deployment/Route all named `sendlock`, tracking the `deployment-openshift` branch. Everything the
+image doesn't do for a Laravel app is bridged by three files in `.s2i/` — understand all three
+together, because getting the app to actually serve required fixing **three independent failures**,
+each of which alone produced a blank/500/welcome page:
+
+1. **DocumentRoot → the Red Hat welcome page.** The image serves Apache from `/opt/app-root/src`,
+   but Laravel's front controller is in `public/`, so `/` hits no index and Apache shows the *"Test
+   Page for the HTTP Server on Red Hat Enterprise Linux."* The image builds its DocumentRoot from a
+   **`DOCUMENTROOT`** env var (`DocumentRoot "/opt/app-root/src${DOCUMENTROOT}"`), so
+   **`.s2i/environment` sets `DOCUMENTROOT=/public`**. (Earlier attempts set `DOCUMENT_ROOT` /
+   `OPENVIP_DOCUMENT_ROOT` — wrong names, silently ignored.)
+2. **php-fpm strips the environment → `MissingAppKeyException` (500).** `www.conf` ships
+   `;clear_env = no` commented out, so fpm defaults to `clear_env = on` and the PHP app sees **none**
+   of the Deployment's env vars (APP_KEY, DB_*, …) — even though PID 1 has them. Fix: **`.s2i/bin/run`
+   materializes a `.env` file** from the container env on every start (Laravel reads the file from
+   disk regardless of fpm's stripping). Only `APP_KEY` has no safe default and must be supplied via
+   `oc set env` / a Secret.
+3. **Vite assets are never built → `Vite manifest not found` (500 on every view).** Every Blade view
+   uses `@vite()`; the PHP builder runs `composer install` but not `npm`. The builder *does* ship
+   Node/npm, so **`.s2i/bin/assemble` runs `npm ci && npm run build`** (plus the standard assemble,
+   `chmod -R g+rwX storage bootstrap/cache database` for the arbitrary non-root UID, `storage:link`,
+   and — for the zero-infra **SQLite** DB — creates the file, `migrate --force`, and seeds
+   `RolesAndPermissionsSeeder`). Migrations/seed run **at build time**; the SQLite file is baked into
+   the image, so **data resets on every rebuild** — fine for the sandbox demo, swap to pgsql + a DB
+   service for anything persistent.
+
+**Both `.s2i/bin/*` scripts must be executable** (mode `100755` in git — set with
+`git update-index --chmod=+x`, since `core.filemode=false` on Windows won't pick it up). A
+non-executable S2I script is silently ignored and the image's default is used instead — which is
+exactly how the old `.s2i/action_hooks/` approach failed: **OpenShift v4 S2I never runs
+`action_hooks/`** (that's an OpenShift v2 concept), so the DocumentRoot/welcome-page logic that used
+to live there never executed. That directory and the old root-level `.htaccess` fallback have been
+removed; `DOCUMENTROOT` is the single mechanism now. `public/.htaccess` remains Laravel's standard
+front-controller rewrite.
+
+Deploy loop: push to `deployment-openshift` → `oc start-build sendlock` (or `oc start-build sendlock
+--from-dir=. --follow` to build local, uncommitted state) → `oc rollout status deployment/sendlock`
+→ curl the route. Required one-time app env (not in git): `oc set env deployment/sendlock APP_KEY=…
+APP_URL=https://sendlock-chebrenda93-dev.apps.rm2.thpm.p1.openshiftapps.com APP_ENV=production
+APP_DEBUG=false`. Because `--no-dev` strips `spatie/laravel-ignition`, a 500 shows only a generic
+"Server Error" page even with `APP_DEBUG=true` — get the real exception from `oc logs
+deployment/sendlock` (`LOG_CHANNEL=stderr`) or by rendering via `php artisan tinker` in the pod.
+

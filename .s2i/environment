@@ -1,0 +1,5 @@
+# S2I build/runtime environment (baked into the image).
+# Point Apache's DocumentRoot at Laravel's public/ dir. The sclorg PHP image
+# generates its DocumentRoot from this var (DocumentRoot "/opt/app-root/src${DOCUMENTROOT}"),
+# so without it Apache serves the src root and shows the Red Hat welcome page.
+DOCUMENTROOT=/public

@@ -1,18 +1,38 @@
 #!/bin/bash
 set -e
 
-echo "===> Running custom S2I assemble script..."
+echo "===> SendLock custom S2I assemble"
 
-# 1. Run standard OpenShift assemble process
+# 1. Standard sclorg PHP assemble (composer install --no-dev, fix-permissions).
 /usr/libexec/s2i/assemble
 
-# 2. Grant group-write permissions (required for OpenShift random UIDs)
-chmod -R g+rwX storage bootstrap/cache
+cd /opt/app-root/src
 
-# 3. Create storage link if missing
-if [ ! -L "public/storage" ]; then
-    php artisan storage:link || true
-fi
+# 2. Build the frontend assets. Every Blade view uses @vite(), so without a
+#    Vite manifest (public/build/manifest.json) the whole app 500s. The PHP
+#    builder ships Node/npm but never runs them, so we do it here.
+export NPM_CONFIG_CACHE=/tmp/.npm
+npm ci --no-audit --no-fund
+npm run build
 
-# 4. Run migrations
-php artisan migrate --force || true
+# 3. OpenShift runs the container as a random, non-root UID that belongs to the
+#    root group, so every path the app writes to must be group-writable.
+#    storage/ + bootstrap/cache/ are Laravel's; database/ holds the SQLite file.
+mkdir -p database storage/framework/{cache,sessions,views}
+chmod -R g+rwX storage bootstrap/cache database
+
+# 4. Public storage symlink (ignored if it already exists).
+php artisan storage:link || true
+
+# 5. Provision the SQLite database and bring the schema + roles up. SQLite keeps
+#    the sandbox zero-infra (no separate DB pod). NOTE: the file is baked into
+#    the image, so data resets on every rebuild/redeploy — fine for a demo;
+#    switch DB_CONNECTION to pgsql + a real service for anything persistent.
+export DB_CONNECTION=sqlite
+export DB_DATABASE=/opt/app-root/src/database/database.sqlite
+: > "$DB_DATABASE"
+chmod g+rw "$DB_DATABASE"
+php artisan migrate --force
+php artisan db:seed --class=RolesAndPermissionsSeeder --force
+
+echo "===> assemble complete"
