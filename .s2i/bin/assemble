@@ -2,7 +2,7 @@
 set -e
 
 echo "Installing PHP dependencies..."
-php /usr/bin/composer install \
+composer install --no-interaction --prefer-dist \
     --no-dev \
     --prefer-dist \
     --optimize-autoloader \
