@@ -1,30 +1,5 @@
 #!/bin/bash
 set -e
 
-echo "Installing PHP dependencies..."
-composer install --no-interaction --prefer-dist \
-    --no-dev \
-    --prefer-dist \
-    --optimize-autoloader \
-    --no-interaction
-
-echo "Installing Node dependencies..."
-npm ci
-
-echo "Building frontend..."
-npm run build
-
-echo "Preparing Laravel..."
-
-mkdir -p bootstrap/cache
-mkdir -p storage/framework/cache
-mkdir -p storage/framework/sessions
-mkdir -p storage/framework/views
-
-chmod -R 775 storage bootstrap/cache || true
-
-php artisan package:discover --ansi
-
-php artisan config:cache || true
-php artisan route:cache || true
-php artisan view:cache || true
+# Execute OpenShift's built-in PHP assemble script
+/usr/libexec/s2i/assemble
