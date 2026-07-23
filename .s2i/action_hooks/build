@@ -1,0 +1,5 @@
+#!/bin/bash
+# Move document root to public folder for Apache
+if [ -d "/etc/httpd/conf.d" ]; then
+    sed -i 's|DocumentRoot "/opt/app-root/src"|DocumentRoot "/opt/app-root/src/public"|g' /etc/httpd/conf/httpd.conf 2>/dev/null || true
+fi
