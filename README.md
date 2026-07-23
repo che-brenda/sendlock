@@ -62,9 +62,11 @@ PostgreSQL on every push to `dev`/`main`.
 
 ## Deployment (Red Hat OpenShift)
 
-Everything needed to deploy lives in `openshift/` — see **`openshift/README.md`** for the
-step-by-step guide (in-cluster build, ConfigMap/Secret, Deployment with health probes,
-Route, migrations Job, scheduler CronJob, PostgreSQL).
+Deploying is one command on any machine: log in with `oc`, then run
+`./openshift/deploy.sh` (Windows: `.\openshift\deploy.ps1`) — it builds the image
+in-cluster, sets up PostgreSQL, secrets, migrations, and the Route, and prints the live
+URL. See **`openshift/README.md`** for the detailed step-by-step guide (installing `oc`,
+getting a login token, verifying, troubleshooting).
 
 ## Branch workflow
 

@@ -24,32 +24,115 @@ needed for the app pods and `replicas` can be scaled freely. No queue worker is
 deployed because no queued jobs exist yet; if jobs are added later, deploy a
 second Deployment running `php artisan queue:work`.
 
-## Deploying — any machine, one command
+## Deploying — step by step (works on any machine)
 
-Nothing in this directory needs editing: manifests are namespace-agnostic
+Nothing in this directory needs editing: the manifests are namespace-agnostic
 (pods reference the bare `sendlock:latest`, resolved by the ImageStream's
-local lookup policy) and the deploy script generates/derives everything else.
-So on any PC: clone/pull, log in, run the script.
+local lookup policy) and the deploy script generates or derives everything
+else (secrets, image, `APP_URL`). The full flow is: **get the code → install
+`oc` → log in → pick a project → run the script.**
+
+### Step 1 — Get the code
 
 ```bash
-# 1. Log in: web console → user menu → "Copy login command" → paste it
-oc login --token=sha256~… --server=https://api.…:6443
-
-# 2. Pick the project (Developer Sandbox: your fixed <user>-dev project)
-oc project <name>          # or first time on your own cluster: oc new-project sendlock
-
-# 3. Deploy (same command for first deploy and every redeploy)
-./openshift/deploy.sh      # Windows: .\openshift\deploy.ps1
+git clone https://github.com/che-brenda/sendlock.git   # first time
+cd sendlock
+git checkout dev
+git pull                                               # every time after
 ```
 
-The script is idempotent. Each run it: generates `sendlock-secrets` (random
-`APP_KEY`/`DB_PASSWORD`) if missing → applies `oc apply -k openshift/` →
-builds the image in-cluster → waits for PostgreSQL → runs the migrate/seed
-Job → patches `APP_URL` to the actual Route host → restarts the app and waits
-for a healthy rollout, printing the live URL.
+> **Important:** the in-cluster build clones this git repo from GitHub
+> (`buildconfig.yaml`, branch `dev`) — it does **not** upload your local
+> checkout. If you have local commits, `git push` them before deploying;
+> uncommitted or unpushed changes will not be in the deployed image.
 
-**The build clones the git repo** (`buildconfig.yaml`, branch `dev`) — push
-your commits before deploying; local-only changes are not built.
+### Step 2 — Install the `oc` CLI (once per machine)
+
+`oc` is OpenShift's command-line client. Check whether you already have it
+with `oc version --client`. If not:
+
+- **Windows:** `scoop install openshift-okd-client` — or download
+  `openshift-client-windows.zip` from
+  <https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/>,
+  unzip it, and put `oc.exe` somewhere on your `PATH`.
+- **macOS:** `brew install openshift-cli`
+- **Linux:** download `openshift-client-linux.tar.gz` from the mirror above,
+  then `tar xzf` it and move `oc` to `/usr/local/bin`.
+
+### Step 3 — Log in to the cluster (once per session)
+
+Tokens expire (on the Developer Sandbox after ~24h), so repeat this when
+`oc whoami` starts failing:
+
+1. Open the OpenShift **web console** in your browser
+   (Developer Sandbox: <https://console.redhat.com/openshift/sandbox> →
+   *Get started* → *Launch* OpenShift).
+2. Click your **username in the top-right corner** → **Copy login command**.
+3. Re-authenticate if asked, then click **Display Token**.
+4. Copy the whole `oc login --token=sha256~… --server=https://api.…:6443`
+   line and run it in your terminal. It should reply `Logged into …`.
+
+### Step 4 — Select the project (namespace)
+
+```bash
+oc project            # shows which project you're currently on
+```
+
+- **Developer Sandbox:** you get one fixed project named `<username>-dev`;
+  `oc login` drops you into it automatically — nothing to do.
+- **Your own cluster, first deploy:** `oc new-project sendlock`
+- **Your own cluster, existing install:** `oc project sendlock`
+
+The script deploys into whatever project is current, so double-check this
+before running it.
+
+### Step 5 — Run the deploy script
+
+From the repo root:
+
+```bash
+./openshift/deploy.sh        # Linux / macOS / Git Bash
+```
+
+```powershell
+.\openshift\deploy.ps1       # Windows PowerShell
+```
+
+The same command does first deploys **and** redeploys — it is idempotent and
+safe to re-run at any time. In order it:
+
+1. verifies you're logged in and prints the target project;
+2. creates the `sendlock-secrets` Secret with a random `APP_KEY` and database
+   password — **first run only**, never rotated after that;
+3. applies every manifest in this directory (`oc apply -k openshift/`);
+4. builds the container image in-cluster from the pushed `dev` branch and
+   streams the build log (the slowest step — several minutes);
+5. waits for PostgreSQL, then runs the migrate + roles/permissions seed Job;
+6. points `APP_URL` at the Route host the cluster actually assigned;
+7. restarts the app, waits for a healthy rollout, and prints the live URL:
+   `==> SendLock is live at https://sendlock-<project>.apps.…`
+
+If any step fails the script stops there with the relevant log — fix the
+cause and just run it again.
+
+### Step 6 — Verify
+
+Open the printed URL: the SendLock landing page should load over HTTPS.
+Register an organization to confirm the database is wired up (sign-up →
+billing page is the expected flow). Useful checks if something looks off:
+
+```bash
+oc get pods                  # web pod Running/Ready? postgresql Running?
+oc get builds                # latest build Complete?
+oc logs deployment/sendlock  # Laravel/Apache output
+```
+
+### Redeploying after changes
+
+```bash
+git push origin dev          # the build pulls from GitHub, not your disk
+./openshift/deploy.sh        # or .\openshift\deploy.ps1
+```
 
 ## Environment / drivers
 
