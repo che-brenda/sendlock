@@ -9,15 +9,21 @@ spec:
   selector:
     matchLabels:
       app: sendlock
+      component: web
   template:
     metadata:
       labels:
         app: sendlock
+        # `component: web` distinguishes app pods from the PostgreSQL pods
+        # (which also carry `app: sendlock`) so the Service selects only these.
+        component: web
     spec:
       containers:
         - name: sendlock
-          # The real image reference is set once in kustomization.yaml (images:).
-          image: sendlock-app
+          # Bare image-stream reference, resolved to the internal-registry image
+          # by the ImageStream's local lookup policy (buildconfig.yaml) — keeps
+          # this manifest namespace-agnostic.
+          image: sendlock:latest
           ports:
             - containerPort: 8080
               name: http
