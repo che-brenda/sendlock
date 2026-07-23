@@ -7,6 +7,13 @@ metadata:
   name: sendlock
   labels:
     app: sendlock
+spec:
+  # Local lookup lets pod specs in this project (deployment, migrate job,
+  # scheduler cron job) reference the bare `sendlock:latest` — OpenShift
+  # resolves it to the internal-registry image at admission, so no manifest
+  # ever hardcodes a registry host or namespace.
+  lookupPolicy:
+    local: true
 ---
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
@@ -28,7 +35,7 @@ spec:
     to:
       kind: ImageStreamTag
       name: sendlock:latest
-  triggers:
-    - type: ConfigChange
-  # Start manually with: oc start-build sendlock --follow
-  # (add a GitHub webhook trigger later for build-on-push)
+  # No triggers: openshift/deploy.sh starts builds explicitly (a ConfigChange
+  # trigger would double-build on every apply). Add a GitHub webhook trigger
+  # later for build-on-push.
+  triggers: []

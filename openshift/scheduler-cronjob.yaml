@@ -25,7 +25,8 @@ spec:
           restartPolicy: Never
           containers:
             - name: scheduler
-              image: sendlock-app
+              # Resolved via the ImageStream's local lookup policy (buildconfig.yaml).
+              image: sendlock:latest
               command: ["php", "artisan", "schedule:run"]
               envFrom:
                 - configMapRef:

@@ -13,12 +13,9 @@ resources:
   - route.yaml
   - scheduler-cronjob.yaml
 
-# Rewrites the `sendlock-app` placeholder in deployment/job manifests to the
-# real image. Replace SENDLOCK_NAMESPACE with your project name (`oc project -q`).
-images:
-  - name: sendlock-app
-    newName: image-registry.openshift-image-registry.svc:5000/SENDLOCK_NAMESPACE/sendlock
-    newTag: latest
+# No images: section needed — pod specs reference the bare `sendlock:latest`,
+# resolved in-project by the ImageStream's local lookup policy (buildconfig.yaml),
+# so nothing here is namespace-specific.
 
 labels:
   - pairs:

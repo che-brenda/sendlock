@@ -5,8 +5,11 @@ metadata:
   labels:
     app: sendlock
 spec:
+  # `component: web` is required — `app: sendlock` alone also matches the
+  # PostgreSQL pods, which would put the DB behind the web route.
   selector:
     app: sendlock
+    component: web
   ports:
     - name: http
       port: 8080

@@ -22,10 +22,9 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          # This Job is applied directly (not via kustomize), so the image is
-          # concrete: replace SENDLOCK_NAMESPACE with your project name, same
-          # as in kustomization.yaml.
-          image: image-registry.openshift-image-registry.svc:5000/SENDLOCK_NAMESPACE/sendlock:latest
+          # Resolved via the ImageStream's local lookup policy (buildconfig.yaml),
+          # so this file applies unedited in any project.
+          image: sendlock:latest
           command:
             - /bin/bash
             - -c
