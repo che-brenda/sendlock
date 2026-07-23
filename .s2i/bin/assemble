@@ -1,5 +1,23 @@
 #!/bin/bash
 set -e
 
-# Execute default OpenShift PHP run script (starts httpd automatically)
-exec /usr/libexec/s2i/run
+echo "===> Running custom S2I assemble script..."
+
+# 1. Execute standard OpenShift PHP S2I assemble process (Composer install, etc.)
+/usr/libexec/s2i/assemble
+
+# 2. Set directory permissions for Laravel runtime folders
+echo "===> Adjusting storage and cache permissions..."
+chmod -R 777 storage bootstrap/cache
+
+# 3. Create public storage symlink if it doesn't exist
+if [ ! -L "public/storage" ]; then
+    echo "===> Creating public storage symlink..."
+    php artisan storage:link || true
+fi
+
+# 4. Run Laravel Database Migrations (optional but recommended during deploy)
+echo "===> Running database migrations..."
+php artisan migrate --force || true
+
+echo "===> S2I assemble completed successfully!"
