@@ -1,5 +1,5 @@
 #!/bin/bash
 set -e
 
-# Execute OpenShift's built-in PHP assemble script
-/usr/libexec/s2i/assemble
+# Execute default OpenShift PHP run script (starts httpd automatically)
+exec /usr/libexec/s2i/run
