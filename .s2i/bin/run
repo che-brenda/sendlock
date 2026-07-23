@@ -3,8 +3,5 @@ set -e
 
 echo "===> Starting Laravel application container..."
 
-# 1. Guarantee writable permissions for OpenShift's arbitrary non-root user (1001)
-chmod -R 777 storage bootstrap/cache
-
-# 2. Hand off container execution to OpenShift's official PHP/Apache runner
+# Hand off execution to standard OpenShift S2I runner
 exec /usr/libexec/s2i/run
