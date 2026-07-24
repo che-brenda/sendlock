@@ -418,8 +418,20 @@ nothing is missed (all tenant-scoped via `organization_id` unless noted):
 
 ### Non-standard directory casing
 This project uses lowercase `app/services/` and `app/helpers/` directories, but the PHP
-namespaces are still PSR-4 capitalized (`App\Services`, `App\Helpers`). Keep that mismatch
-when adding files there, or PSR-4 autoloading will fail.
+namespaces are still PSR-4 capitalized (`App\Services`, `App\Helpers`). This only works because
+`composer.json` maps those namespaces **explicitly** to the lowercase dirs:
+```json
+"App\\Helpers\\": "app/helpers/",
+"App\\Services\\": "app/services/",
+```
+Do **not** remove those two mappings. The generic `"App\\": "app/"` rule alone resolves on
+case-insensitive Windows/macOS but **fails on the case-sensitive Linux deployment** — Composer maps
+`App\Services\Foo` to `app/Services/Foo.php`, which doesn't exist (the dir is `app/services/`), and
+`composer --optimize` does **not** rescue it (it *skips* PSR-4-non-compliant files). The symptom is a
+runtime `Class "App\Services\…"/"App\Helpers\…" not found` 500 on any page that loads a service/helper
+(e.g. the dashboard via `RiskReasonStats`, or any audit-logged mutation via `AuditLogger`) while
+service-free pages look fine. New files under these dirs must stay in the `App\Services` / `App\Helpers`
+namespaces (the explicit mappings cover their subdirectories too).
 
 ## Deployment (OpenShift / S2I)
 
