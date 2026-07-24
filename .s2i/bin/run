@@ -42,9 +42,13 @@ DB_HOST=${DB_HOST:-}
 DB_PORT=${DB_PORT:-}
 DB_USERNAME=${DB_USERNAME:-}
 DB_PASSWORD=${DB_PASSWORD:-}
-SENDLOCK_SUPERADMIN_EMAIL=${SENDLOCK_SUPERADMIN_EMAIL:-}
-SENDLOCK_SUPERADMIN_PASSWORD=${SENDLOCK_SUPERADMIN_PASSWORD:-}
 ENV
+
+# Only emit the Super Admin overrides when actually set — writing `KEY=` (empty)
+# makes Laravel's env('KEY', 'default') return "" instead of the default, which
+# would seed the Super Admin with a blank password.
+[ -n "${SENDLOCK_SUPERADMIN_EMAIL}" ] && echo "SENDLOCK_SUPERADMIN_EMAIL=${SENDLOCK_SUPERADMIN_EMAIL}" >> .env
+[ -n "${SENDLOCK_SUPERADMIN_PASSWORD}" ] && echo "SENDLOCK_SUPERADMIN_PASSWORD=${SENDLOCK_SUPERADMIN_PASSWORD}" >> .env
 
 # Bring the schema + baseline data up at RUNTIME (not build time) so it targets
 # the persistent database — the Postgres service in prod, or the sqlite fallback.
