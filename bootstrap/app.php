@@ -25,6 +25,17 @@ return Application::configure(basePath: dirname(__DIR__))
             'org.admin' => EnsureOrgAdmin::class,
         ]);
 
+        // Behind OpenShift's edge-terminating router the pod receives plain HTTP,
+        // so without trusting the router Laravel thinks the request is http and
+        // emits http:// form actions and asset URLs that browsers block as mixed
+        // content on the https page (unstyled page + failing login). Trust the
+        // router's X-Forwarded-Proto (correct https scheme) and X-Forwarded-For
+        // (real client IP for the firewall + audit logs). Host is read from the
+        // preserved Host header, not X-Forwarded-Host, to avoid host spoofing.
+        $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR
+            | Request::HEADER_X_FORWARDED_PORT
+            | Request::HEADER_X_FORWARDED_PROTO);
+
         // Application firewall runs FIRST — inspect/block attacks and harden every
         // response before anything else in the web stack sees the request.
         $middleware->web(prepend: [
