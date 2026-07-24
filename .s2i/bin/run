@@ -8,13 +8,16 @@ cd /opt/app-root/src
 # from the Deployment env — makes Laravel look for a bogus file and every DB
 # query 500s (login/register), even though static pages still render. Guard
 # against that: when the connection is sqlite, ignore any non-absolute
-# DB_DATABASE and fall back to the baked-in database file.
+# DB_DATABASE and fall back to the baked-in database file. (For pgsql/mysql,
+# DB_DATABASE is the DATABASE NAME and is left untouched.)
 DB_CONNECTION=${DB_CONNECTION:-sqlite}
 if [ "$DB_CONNECTION" = "sqlite" ]; then
   case "${DB_DATABASE}" in
     /*) : ;;  # absolute path supplied — respect it
     *)  DB_DATABASE=/opt/app-root/src/database/database.sqlite ;;
   esac
+  mkdir -p "$(dirname "$DB_DATABASE")"
+  [ -f "$DB_DATABASE" ] || : > "$DB_DATABASE"
 fi
 
 # php-fpm runs with clear_env on in this image, so environment variables set on
@@ -39,7 +42,29 @@ DB_HOST=${DB_HOST:-}
 DB_PORT=${DB_PORT:-}
 DB_USERNAME=${DB_USERNAME:-}
 DB_PASSWORD=${DB_PASSWORD:-}
+SENDLOCK_SUPERADMIN_EMAIL=${SENDLOCK_SUPERADMIN_EMAIL:-}
+SENDLOCK_SUPERADMIN_PASSWORD=${SENDLOCK_SUPERADMIN_PASSWORD:-}
 ENV
+
+# Bring the schema + baseline data up at RUNTIME (not build time) so it targets
+# the persistent database — the Postgres service in prod, or the sqlite fallback.
+# Everything here is idempotent: `migrate --force` skips already-applied
+# migrations and the seeders use firstOrCreate, so this is safe on every start.
+# For a networked DB, the app pod can start before the DB accepts connections —
+# wait for it first (uses pdo_pgsql, exactly what Laravel needs).
+if [ "$DB_CONNECTION" != "sqlite" ]; then
+  echo "Waiting for ${DB_CONNECTION} at ${DB_HOST}:${DB_PORT:-5432} ..."
+  for i in $(seq 1 30); do
+    if php -r 'try { new PDO(sprintf("%s:host=%s;port=%s;dbname=%s", getenv("DB_CONNECTION"), getenv("DB_HOST"), getenv("DB_PORT")?:"5432", getenv("DB_DATABASE")), getenv("DB_USERNAME"), getenv("DB_PASSWORD"), [PDO::ATTR_TIMEOUT=>3]); exit(0);} catch (Throwable $e){ exit(1);}'; then
+      echo "Database is ready."; break
+    fi
+    echo "  ...not ready yet ($i/30)"; sleep 2
+  done
+fi
+
+php artisan migrate --force || echo "WARN: migrate failed"
+php artisan db:seed --class=RolesAndPermissionsSeeder --force || echo "WARN: roles seed failed"
+php artisan db:seed --class=DemoSuperAdminSeeder --force || echo "WARN: super-admin seed failed"
 
 # Hand off to the standard sclorg runner, which applies DOCUMENTROOT (=/public)
 # to Apache's DocumentRoot and starts httpd + php-fpm.

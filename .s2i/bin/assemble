@@ -24,15 +24,9 @@ chmod -R g+rwX storage bootstrap/cache database
 # 4. Public storage symlink (ignored if it already exists).
 php artisan storage:link || true
 
-# 5. Provision the SQLite database and bring the schema + roles up. SQLite keeps
-#    the sandbox zero-infra (no separate DB pod). NOTE: the file is baked into
-#    the image, so data resets on every rebuild/redeploy — fine for a demo;
-#    switch DB_CONNECTION to pgsql + a real service for anything persistent.
-export DB_CONNECTION=sqlite
-export DB_DATABASE=/opt/app-root/src/database/database.sqlite
-: > "$DB_DATABASE"
-chmod g+rw "$DB_DATABASE"
-php artisan migrate --force
-php artisan db:seed --class=RolesAndPermissionsSeeder --force
+# 5. Database schema + seed data are handled at RUNTIME by .s2i/bin/run (against
+#    the persistent Postgres service, so data survives rebuilds), NOT here at
+#    build time. We deliberately do NOT create/migrate a baked SQLite file — that
+#    reset all data on every rebuild. See .s2i/bin/run for the migrate + seed step.
 
 echo "===> assemble complete"
