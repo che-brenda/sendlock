@@ -3,6 +3,20 @@ set -e
 
 cd /opt/app-root/src
 
+# For SQLite, DB_DATABASE must be an ABSOLUTE path to the database file. A stray
+# relative value — e.g. a leftover MySQL-style `DB_DATABASE=sendlock` inherited
+# from the Deployment env — makes Laravel look for a bogus file and every DB
+# query 500s (login/register), even though static pages still render. Guard
+# against that: when the connection is sqlite, ignore any non-absolute
+# DB_DATABASE and fall back to the baked-in database file.
+DB_CONNECTION=${DB_CONNECTION:-sqlite}
+if [ "$DB_CONNECTION" = "sqlite" ]; then
+  case "${DB_DATABASE}" in
+    /*) : ;;  # absolute path supplied — respect it
+    *)  DB_DATABASE=/opt/app-root/src/database/database.sqlite ;;
+  esac
+fi
+
 # php-fpm runs with clear_env on in this image, so environment variables set on
 # the Deployment never reach the PHP application. Laravel reads config from a
 # .env file on disk regardless of fpm's env stripping, so we materialize one
@@ -19,7 +33,7 @@ LOG_LEVEL=${LOG_LEVEL:-error}
 SESSION_DRIVER=${SESSION_DRIVER:-file}
 CACHE_STORE=${CACHE_STORE:-file}
 QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}
-DB_CONNECTION=${DB_CONNECTION:-sqlite}
+DB_CONNECTION=${DB_CONNECTION}
 DB_DATABASE=${DB_DATABASE:-/opt/app-root/src/database/database.sqlite}
 DB_HOST=${DB_HOST:-}
 DB_PORT=${DB_PORT:-}

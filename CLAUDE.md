@@ -403,6 +403,7 @@ nothing is missed (all tenant-scoped via `organization_id` unless noted):
   (`billing.checkout`/`billing.process`), the org's own `subscription` page, and the Super Admin
   `customers` overview; see Billing & the subscription gate.
 - `SecurityInsightsController` — read-only Threat Overview + Blocked Attempts (Super Admin sees all orgs).
+- `SecurityController` — Security Center (`/security`, `security.index`); the WAF assurance page; see the WAF section.
 - `TrustCenterController` — Trust Center (`org.admin`); see its section.
 - `ProtectedEmailController` / `RecipientVerificationController` / `ApprovalController` — the
   Send Protected → verification → approval workflow; see its section.
@@ -466,4 +467,21 @@ APP_URL=https://sendlock-chebrenda93-dev.apps.rm2.thpm.p1.openshiftapps.com APP_
 APP_DEBUG=false`. Because `--no-dev` strips `spatie/laravel-ignition`, a 500 shows only a generic
 "Server Error" page even with `APP_DEBUG=true` — get the real exception from `oc logs
 deployment/sendlock` (`LOG_CHANNEL=stderr`) or by rendering via `php artisan tinker` in the pod.
+
+**Two runtime traps that only surface as a login/register 500 (static pages still render):**
+1. **A stray `DB_DATABASE` breaks SQLite.** `config/database.php` resolves the sqlite file from
+   `env('DB_DATABASE', database_path('database.sqlite'))`, so any `DB_DATABASE` set on the Deployment
+   (e.g. a leftover MySQL-style `DB_DATABASE=sendlock` from a DB template) makes Laravel open a bogus
+   relative file → *"Database file at path [sendlock] does not exist"* on every query, while DB-free
+   pages (landing, `/login` GET) look fine. `.s2i/bin/run` now **forces the absolute baked-in path
+   whenever `DB_CONNECTION=sqlite` and `DB_DATABASE` isn't already absolute**, so the sqlite demo is
+   self-correcting; still, don't set MySQL placeholders on the Deployment (`oc set env deployment/sendlock
+   DB_HOST- DB_PORT- DB_DATABASE- DB_USERNAME- DB_PASSWORD-` to clear them). `oc set env … --list`
+   should show only `DB_CONNECTION=sqlite`.
+2. **The Route needs edge TLS.** `APP_URL` is `https://…` but the sandbox route is created without TLS,
+   so browsers on the https link get a router **503** while `http://` works — looks like the app is
+   down. Fix once: `oc patch route sendlock --type=merge -p '{"spec":{"tls":{"termination":"edge",
+   "insecureEdgeTerminationPolicy":"Redirect"}}}'` (edge cert is the router's wildcard; http→https
+   redirects). Deployment `env` and Route changes are cluster objects — they **persist across S2I
+   rebuilds** (a rebuild only swaps the image), so these are one-time fixes, not per-deploy.
 
